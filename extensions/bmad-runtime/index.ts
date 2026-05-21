@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { findCatalogRow, loadBmadCatalog } from "./catalog.js";
+import { findCatalogRow, loadBmadCatalog, type BmadCatalogRow } from "./catalog.js";
 import { shouldBlockMutationInPlanning } from "./gates.js";
 import { loadPathConfig } from "./paths.js";
 import { recommendNext, summarizeCompletion } from "./scanner.js";
@@ -39,10 +39,57 @@ function loadRecommendation(cwd: string) {
   return { catalog, cfg, rec };
 }
 
-async function sendWorkflowInvocation(args: string, ctx: any, prompt: string): Promise<boolean> {
-  if (ctx.hasUI && typeof ctx.newSession === "function") {
-    const ok = await ctx.ui.confirm("BMAD fresh session", `Launch ${args} in a fresh Pi session? BMAD recommends a fresh context per workflow.`);
-    if (ok) {
+type FreshLaunchMode = "ask" | "always" | "never";
+
+interface ParsedRunArgs {
+  target: string;
+  extraArgs: string;
+  fresh: FreshLaunchMode;
+}
+
+function parseRunArgs(parts: string[]): ParsedRunArgs {
+  let fresh: FreshLaunchMode = "ask";
+  const positional: string[] = [];
+  for (const part of parts) {
+    if (part === "--same-session" || part === "--no-fresh") fresh = "never";
+    else if (part === "--fresh") fresh = "always";
+    else if (part === "--no-confirm") fresh = "always";
+    else positional.push(part);
+  }
+  const [target = "next", ...extra] = positional;
+  return { target, extraArgs: extra.join(" ").trim(), fresh };
+}
+
+function rowInvocationArgs(row: BmadCatalogRow | undefined, extraArgs: string): string {
+  const parts: string[] = [];
+  if (row?.action) parts.push(row.action);
+  if (row?.args && !/^\[[^\]]+\]$/.test(row.args.trim())) parts.push(row.args.trim());
+  if (extraArgs) parts.push(extraArgs);
+  return parts.join(" ").trim();
+}
+
+function buildWorkflowPrompt(row: BmadCatalogRow | undefined, skill: string, state: { mode: string; phase: string }, extraArgs: string): string {
+  const invocationArgs = rowInvocationArgs(row, extraArgs);
+  const invocation = `/skill:${skill}${invocationArgs ? ` ${invocationArgs}` : ""}`;
+  const target = row ? `${row.displayName} (${row.menuCode || row.skill})` : skill;
+  return `${invocation}
+
+BMAD Runtime target workflow: ${target}.
+Follow the workflow exactly. Runtime mode is ${state.mode}; phase is ${state.phase}.
+If this workflow reaches a checkpoint, obey the workflow checkpoint. Otherwise continue until the workflow's own completion or halt condition.`;
+}
+
+async function sendWorkflowInvocation(args: string, ctx: any, prompt: string, fresh: FreshLaunchMode): Promise<boolean> {
+  if (fresh === "never") {
+    ctx.ui.notify("Launching BMAD workflow in current session.", "warning");
+    return false;
+  }
+
+  if (typeof ctx.newSession === "function") {
+    const shouldLaunchFresh =
+      fresh === "always" ||
+      (ctx.hasUI && (await ctx.ui.confirm("BMAD fresh session", `Launch ${args} in a fresh Pi session? BMAD recommends a fresh context per workflow.`)));
+    if (shouldLaunchFresh) {
       await ctx.newSession({
         parentSession: ctx.sessionManager.getSessionFile?.(),
         withSession: async (nextCtx: any) => {
@@ -52,7 +99,7 @@ async function sendWorkflowInvocation(args: string, ctx: any, prompt: string): P
       return true;
     }
   }
-  // Fallback: same session.
+
   ctx.ui.notify("Launching BMAD workflow in current session.", "warning");
   return false;
 }
@@ -106,6 +153,21 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
         state = saveState(ctx.cwd, { ...state, active: true, mode: "autonomous", phase: state.phase === "1-analysis" || state.phase === "2-planning" || state.phase === "0-init" ? "3-solutioning" : state.phase });
         pi.appendEntry("bmad-runtime-state", state);
         ctx.ui.notify(`BMAD autonomous mode enabled.\n${formatState(state)}`, "warning");
+
+        if (cmd === "autopilot") {
+          const { catalog, rec } = loadRecommendation(ctx.cwd);
+          const row = rec.row;
+          if (!row) {
+            pi.sendMessage({ customType: "bmad-runtime", content: "✅ BMAD autopilot found no incomplete required workflow.", display: true }, { triggerTurn: false });
+            return;
+          }
+          const skill = row.skill;
+          state = saveState(ctx.cwd, { ...state, currentWorkflow: skill, phase: (row.phase as RuntimePhase | undefined) ?? state.phase });
+          pi.appendEntry("bmad-runtime-state", state);
+          const prompt = buildWorkflowPrompt(row, skill, state, rest.join(" ").trim());
+          const launchedInFreshSession = await sendWorkflowInvocation(skill, ctx, prompt, catalog.exists ? "always" : "never");
+          if (!launchedInFreshSession) pi.sendUserMessage(prompt);
+        }
         return;
       }
 
@@ -148,18 +210,18 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
       }
 
       if (cmd === "run") {
-        const token = rest.join(" ").trim();
-        if (!token) {
-          ctx.ui.notify("Usage: /bmad run <menu-code-or-skill>", "error");
+        const parsed = parseRunArgs(rest);
+        const { catalog, rec } = loadRecommendation(ctx.cwd);
+        const row = parsed.target === "next" ? rec.row : findCatalogRow(catalog.rows, parsed.target);
+        const skill = row?.skill ?? parsed.target.replace(/^\/+/, "");
+        if (!skill || skill === "next") {
+          ctx.ui.notify("No BMAD workflow target found. Use `/bmad next` to inspect recommendations or `/bmad run <menu-code-or-skill>`.", "error");
           return;
         }
-        const { catalog } = loadRecommendation(ctx.cwd);
-        const row = findCatalogRow(catalog.rows, token);
-        const skill = row?.skill ?? token.replace(/^\/+/, "");
         state = saveState(ctx.cwd, { ...activateState(state), currentWorkflow: skill, phase: (row?.phase as RuntimePhase | undefined) ?? state.phase });
         pi.appendEntry("bmad-runtime-state", state);
-        const prompt = `/skill:${skill}\n\nBMAD Runtime target workflow: ${row ? `${row.displayName} (${row.menuCode})` : skill}. Follow the workflow exactly. Runtime mode is ${state.mode}; phase is ${state.phase}.`;
-        const launchedInFreshSession = await sendWorkflowInvocation(skill, ctx, prompt);
+        const prompt = buildWorkflowPrompt(row, skill, state, parsed.extraArgs);
+        const launchedInFreshSession = await sendWorkflowInvocation(skill, ctx, prompt, parsed.fresh);
         if (!launchedInFreshSession) pi.sendUserMessage(prompt);
         return;
       }

@@ -31,9 +31,12 @@ pi -e C:/Daniel-D/AgentPlatformRepos/pi-bmad-runtime
 /bmad status          Show state, detected BMAD installation, and next candidate workflow
 /bmad next            Show the next BMAD workflow recommendation
 /bmad run <code>      Launch a workflow by menu code or skill name, usually in a fresh session
+/bmad run next        Launch the next recommended required workflow
+/bmad run --same-session <code>  Launch without fresh-session handoff
+/bmad run --fresh <code>         Launch in a fresh session without confirmation
 /bmad phase <phase>   Set phase manually: 1-analysis, 2-planning, 3-solutioning, 4-implementation
 /bmad autonomous      Switch to autonomous Phase 3/4 mode
-/bmad autopilot       Alias for autonomous mode
+/bmad autopilot       Switch to autonomous mode and launch the next required workflow
 /bmad interview       Switch back to human-in-loop interview mode
 /bmad grill [target]  Run grill-with-docs against current plan or target
 /bmad exit            Deactivate the runtime lock

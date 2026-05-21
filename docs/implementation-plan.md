@@ -15,9 +15,11 @@
 
 ## Milestone 2 — Strong Workflow Launching
 
-- [ ] Fresh-session launch hardened across interactive/print/RPC modes.
-- [ ] `/bmad run <code>` supports workflow args.
-- [ ] Runtime updates `currentWorkflow` from launched skill.
+- [x] Fresh-session launch supports ask/always/never modes.
+- [x] `/bmad run <code>` supports workflow args.
+- [x] `/bmad run next` launches the recommendation engine target.
+- [x] `/bmad autopilot` switches to autonomous mode and launches next required workflow.
+- [x] Runtime updates `currentWorkflow` from launched skill.
 - [ ] Runtime records workflow completion evidence.
 - [ ] Better status rendering in Pi TUI.
 
@@ -47,7 +49,7 @@
 
 ## Milestone 6 — Package Hardening
 
-- [ ] Tests for CSV parser, scanner, recommendation engine, gates.
+- [x] Tests for CSV parser, scanner, recommendation engine, gates.
 - [ ] npm publishing metadata.
 - [ ] Example fixture project.
 - [ ] README install demos.

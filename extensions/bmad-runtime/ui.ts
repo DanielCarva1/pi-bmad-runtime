@@ -41,9 +41,12 @@ export function commandHelp(): string {
 /bmad status          Show state, catalog detection, and next recommendation
 /bmad next            Show the next BMAD recommendation
 /bmad run <code>      Launch workflow by menu code or skill name, e.g. /bmad run CP
+/bmad run next        Launch the next recommended required workflow
+/bmad run --same-session <code>  Launch without fresh-session handoff
+/bmad run --fresh <code>         Launch in a fresh session without confirmation
 /bmad phase <phase>   Set phase: 1-analysis | 2-planning | 3-solutioning | 4-implementation
 /bmad autonomous      Switch to Phase 3/4 autonomous mode
-/bmad autopilot       Alias for autonomous mode
+/bmad autopilot       Switch to autonomous mode and launch the next required workflow
 /bmad interview       Switch to human-in-loop interview mode
 /bmad grill [target]  Run grill-with-docs against current plan or target
 /bmad exit            Deactivate runtime lock
