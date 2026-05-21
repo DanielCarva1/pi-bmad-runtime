@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 export type StoryStatus = "draft" | "ready-for-dev" | "in-progress" | "review" | "done" | string;
 
 export interface StoryAnalysis {
@@ -11,6 +14,12 @@ export interface StoryAnalysis {
 export interface StoryValidationIssue {
   severity: "error" | "warning";
   message: string;
+}
+
+export interface StoryStatusFile {
+  key: string;
+  path: string;
+  status?: StoryStatus;
 }
 
 function sectionBody(text: string, headingPattern: RegExp): string {
@@ -77,4 +86,37 @@ export function validateStoryDone(text: string): StoryValidationIssue[] {
     issues.push({ severity: "error", message: "Story is marked done but File List is empty or missing." });
   }
   return issues;
+}
+
+export function deriveStoryKeyFromPath(filePath: string): string | undefined {
+  const base = path.basename(filePath, path.extname(filePath));
+  return /^\d+-\d+-/.test(base) ? base : undefined;
+}
+
+export function scanStoryStatusFiles(dir: string): StoryStatusFile[] {
+  if (!fs.existsSync(dir)) return [];
+  const out: StoryStatusFile[] = [];
+  const walk = (current: string) => {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.isFile() && entry.name.endsWith(".md")) {
+        const key = deriveStoryKeyFromPath(full);
+        if (!key) continue;
+        try {
+          out.push({ key, path: full, status: parseStoryStatus(fs.readFileSync(full, "utf8")) });
+        } catch {
+          // Ignore unreadable story candidates.
+        }
+      }
+    }
+  };
+  walk(dir);
+  return out;
 }

@@ -4,6 +4,7 @@ import { shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation, shouldB
 import { loadPathConfig } from "./paths.js";
 import { recommendNext, summarizeCompletion } from "./scanner.js";
 import { loadSprintStatus, summarizeSprint, validateSprintDocument } from "./sprint.js";
+import { scanStoryStatusFiles } from "./story.js";
 import { activateState, deactivateState, isAutonomousPhase, loadState, recordWorkflowLaunch, saveState, setPhase, type RuntimePhase } from "./state.js";
 import { commandHelp, formatRecommendation, formatState } from "./ui.js";
 
@@ -203,12 +204,20 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
         const { catalog, cfg, rec } = loadRecommendation(ctx.cwd);
         const summary = summarizeCompletion(rec.completions);
         const sprint = loadSprintStatus(cfg);
+        const sprintStoryStatus = new Map(sprint.doc?.entries.filter((entry) => entry.kind === "story").map((entry) => [entry.key, entry.status]) ?? []);
+        const storyFiles = scanStoryStatusFiles(cfg.implementation_artifacts);
+        const storyMismatches = sprint.doc
+          ? storyFiles.filter((story) => story.status && sprintStoryStatus.has(story.key) && sprintStoryStatus.get(story.key) !== story.status)
+          : [];
         const sprintLines = sprint.doc
           ? [
               `Sprint status: ${sprint.path}`,
               `Sprint entries: ${sprint.doc.entries.length}`,
               `Sprint validation errors: ${validateSprintDocument(sprint.doc).filter((issue) => issue.severity === "error").length}`,
               `Sprint summary: ${JSON.stringify(summarizeSprint(sprint.doc))}`,
+              `Story files detected: ${storyFiles.length}`,
+              `Story/sprint status mismatches: ${storyMismatches.length}`,
+              ...storyMismatches.slice(0, 5).map((story) => `Mismatch: ${story.key} story=${story.status} sprint=${sprintStoryStatus.get(story.key)}`),
             ]
           : [`Sprint status: ${sprint.exists ? `error: ${sprint.error}` : `not found at ${sprint.path}`}`];
         const text = [
