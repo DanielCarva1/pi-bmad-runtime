@@ -33,7 +33,9 @@ pi -e C:/Daniel-D/AgentPlatformRepos/pi-bmad-runtime
 /bmad run <code>      Launch a workflow by menu code or skill name, usually in a fresh session
 /bmad phase <phase>   Set phase manually: 1-analysis, 2-planning, 3-solutioning, 4-implementation
 /bmad autonomous      Switch to autonomous Phase 3/4 mode
+/bmad autopilot       Alias for autonomous mode
 /bmad interview       Switch back to human-in-loop interview mode
+/bmad grill [target]  Run grill-with-docs against current plan or target
 /bmad exit            Deactivate the runtime lock
 /bmad help            Show command help
 ```

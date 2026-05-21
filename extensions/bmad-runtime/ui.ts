@@ -43,7 +43,9 @@ export function commandHelp(): string {
 /bmad run <code>      Launch workflow by menu code or skill name, e.g. /bmad run CP
 /bmad phase <phase>   Set phase: 1-analysis | 2-planning | 3-solutioning | 4-implementation
 /bmad autonomous      Switch to Phase 3/4 autonomous mode
+/bmad autopilot       Alias for autonomous mode
 /bmad interview       Switch to human-in-loop interview mode
+/bmad grill [target]  Run grill-with-docs against current plan or target
 /bmad exit            Deactivate runtime lock
 /bmad help            Show this help`;
 }

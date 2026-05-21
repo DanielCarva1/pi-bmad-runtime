@@ -61,7 +61,7 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
   pi.registerCommand("bmad", {
     description: "BMAD Runtime for Pi: stateful BMAD orchestration, gates, and workflow launch",
     getArgumentCompletions(prefix: string) {
-      const items = ["start", "status", "next", "run", "phase", "autonomous", "interview", "exit", "help"];
+      const items = ["start", "status", "next", "run", "phase", "autonomous", "autopilot", "interview", "grill", "exit", "help"];
       return items.filter((item) => item.startsWith(prefix)).map((item) => ({ value: item, label: item }));
     },
     handler: async (rawArgs, ctx) => {
@@ -102,10 +102,21 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
         return;
       }
 
-      if (cmd === "autonomous") {
+      if (cmd === "autonomous" || cmd === "autopilot") {
         state = saveState(ctx.cwd, { ...state, active: true, mode: "autonomous", phase: state.phase === "1-analysis" || state.phase === "2-planning" || state.phase === "0-init" ? "3-solutioning" : state.phase });
         pi.appendEntry("bmad-runtime-state", state);
         ctx.ui.notify(`BMAD autonomous mode enabled.\n${formatState(state)}`, "warning");
+        return;
+      }
+
+      if (cmd === "grill") {
+        state = saveState(ctx.cwd, activateState(state));
+        pi.appendEntry("bmad-runtime-state", state);
+        const target = rest.join(" ").trim();
+        const prompt = target
+          ? `/skill:grill-with-docs ${target}`
+          : "/skill:grill-with-docs Challenge the current BMAD plan or most relevant planning artifact against existing CONTEXT.md, ADRs, docs, and code. Ask one question at a time and update CONTEXT.md/ADRs only when decisions crystallize.";
+        pi.sendUserMessage(prompt);
         return;
       }
 
