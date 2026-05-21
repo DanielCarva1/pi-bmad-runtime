@@ -3,7 +3,7 @@ import { findCatalogRow, loadBmadCatalog, type BmadCatalogRow } from "./catalog.
 import { shouldBlockMutationInPlanning } from "./gates.js";
 import { loadPathConfig } from "./paths.js";
 import { recommendNext, summarizeCompletion } from "./scanner.js";
-import { activateState, deactivateState, isAutonomousPhase, loadState, saveState, setPhase, type RuntimePhase } from "./state.js";
+import { activateState, deactivateState, isAutonomousPhase, loadState, recordWorkflowLaunch, saveState, setPhase, type RuntimePhase } from "./state.js";
 import { commandHelp, formatRecommendation, formatState } from "./ui.js";
 
 const VALID_PHASES: RuntimePhase[] = ["0-init", "1-analysis", "2-planning", "3-solutioning", "4-implementation", "anytime"];
@@ -162,7 +162,16 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
             return;
           }
           const skill = row.skill;
-          state = saveState(ctx.cwd, { ...state, currentWorkflow: skill, phase: (row.phase as RuntimePhase | undefined) ?? state.phase });
+          state = saveState(
+            ctx.cwd,
+            recordWorkflowLaunch({ ...state, phase: (row.phase as RuntimePhase | undefined) ?? state.phase }, {
+              skill,
+              displayName: row.displayName,
+              menuCode: row.menuCode,
+              phase: row.phase,
+              launchArgs: rest.join(" ").trim(),
+            }),
+          );
           pi.appendEntry("bmad-runtime-state", state);
           const prompt = buildWorkflowPrompt(row, skill, state, rest.join(" ").trim());
           const launchedInFreshSession = await sendWorkflowInvocation(skill, ctx, prompt, catalog.exists ? "always" : "never");
@@ -218,7 +227,16 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
           ctx.ui.notify("No BMAD workflow target found. Use `/bmad next` to inspect recommendations or `/bmad run <menu-code-or-skill>`.", "error");
           return;
         }
-        state = saveState(ctx.cwd, { ...activateState(state), currentWorkflow: skill, phase: (row?.phase as RuntimePhase | undefined) ?? state.phase });
+        state = saveState(
+          ctx.cwd,
+          recordWorkflowLaunch({ ...activateState(state), phase: (row?.phase as RuntimePhase | undefined) ?? state.phase }, {
+            skill,
+            displayName: row?.displayName,
+            menuCode: row?.menuCode,
+            phase: row?.phase ?? state.phase,
+            launchArgs: parsed.extraArgs,
+          }),
+        );
         pi.appendEntry("bmad-runtime-state", state);
         const prompt = buildWorkflowPrompt(row, skill, state, parsed.extraArgs);
         const launchedInFreshSession = await sendWorkflowInvocation(skill, ctx, prompt, parsed.fresh);

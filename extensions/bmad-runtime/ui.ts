@@ -23,6 +23,7 @@ export function formatRecommendation(rec: Recommendation): string {
 }
 
 export function formatState(state: RuntimeState): string {
+  const lastRun = state.workflowHistory.at(-1);
   return [
     `active: ${state.active}`,
     `mode: ${state.mode}`,
@@ -30,6 +31,8 @@ export function formatState(state: RuntimeState): string {
     `phase: ${state.phase}`,
     `currentWorkflow: ${state.currentWorkflow ?? "-"}`,
     `currentStory: ${state.currentStory ?? "-"}`,
+    `workflowHistory: ${state.workflowHistory.length}`,
+    `lastRun: ${lastRun ? `${lastRun.skill} @ ${lastRun.launchedAt}` : "-"}`,
     `updatedAt: ${state.updatedAt}`,
   ].join("\n");
 }

@@ -18,6 +18,16 @@ export interface ParkingLotItem {
   createdAt: string;
 }
 
+export interface WorkflowRunRecord {
+  skill: string;
+  displayName?: string;
+  menuCode?: string;
+  phase: string;
+  mode: RuntimeMode;
+  launchedAt: string;
+  launchArgs?: string;
+}
+
 export interface RuntimeState {
   version: 1;
   active: boolean;
@@ -26,6 +36,7 @@ export interface RuntimeState {
   phase: RuntimePhase;
   currentWorkflow?: string | null;
   currentStory?: string | null;
+  workflowHistory: WorkflowRunRecord[];
   autonomy: {
     phase3And4Yolo: boolean;
     askUserOnlyFor: string[];
@@ -71,6 +82,7 @@ export function createDefaultState(): RuntimeState {
     createdAt: now,
     updatedAt: now,
     parkingLot: [],
+    workflowHistory: [],
   };
 }
 
@@ -87,6 +99,7 @@ function normalizeState(raw: unknown): RuntimeState {
       ...(value.autonomy ?? {}),
     },
     parkingLot: Array.isArray(value.parkingLot) ? value.parkingLot : [],
+    workflowHistory: Array.isArray(value.workflowHistory) ? value.workflowHistory.slice(-50) : [],
   };
 }
 
@@ -130,6 +143,22 @@ export function deactivateState(state: RuntimeState): RuntimeState {
 export function setPhase(state: RuntimeState, phase: RuntimePhase): RuntimeState {
   const mode: RuntimeMode = phase === "3-solutioning" || phase === "4-implementation" ? "autonomous" : "interview";
   return { ...state, phase, mode };
+}
+
+export function recordWorkflowLaunch(
+  state: RuntimeState,
+  run: Omit<WorkflowRunRecord, "mode" | "launchedAt"> & { mode?: RuntimeMode; launchedAt?: string },
+): RuntimeState {
+  const record: WorkflowRunRecord = {
+    ...run,
+    mode: run.mode ?? state.mode,
+    launchedAt: run.launchedAt ?? new Date().toISOString(),
+  };
+  return {
+    ...state,
+    currentWorkflow: run.skill,
+    workflowHistory: [...state.workflowHistory, record].slice(-50),
+  };
 }
 
 export function isAutonomousPhase(state: RuntimeState): boolean {
