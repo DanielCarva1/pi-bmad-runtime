@@ -1,5 +1,7 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseSprintStatusLines, parseSprintStatusText, validateSprintDocument, validateSprintTransition } from "./sprint.js";
+import { validateStoryDone } from "./story.js";
 import type { RuntimeState } from "./state.js";
 
 const PLANNING_ALLOWED_PREFIXES = [
@@ -63,6 +65,41 @@ function validateSprintEdit(edits: unknown): string | undefined {
   ].join("\n");
 }
 
+function isStoryPath(rel: string): boolean {
+  return rel.endsWith(".md") && rel.includes("implementation-artifacts/") && /(?:^|\/)\d+-\d+-[^/]+\.md$/.test(rel);
+}
+
+function applyEditsToCurrentFile(cwd: string, input: Record<string, unknown>): string | undefined {
+  const rel = normalizeToolPath(cwd, input.path ?? input.file_path);
+  if (!rel) return undefined;
+  const absolute = path.resolve(cwd, rel);
+  if (!fs.existsSync(absolute)) return undefined;
+  const edits = input.edits;
+  if (!Array.isArray(edits)) return undefined;
+
+  let content = fs.readFileSync(absolute, "utf8");
+  for (const edit of edits) {
+    if (!edit || typeof edit !== "object") continue;
+    const oldText = (edit as { oldText?: unknown }).oldText;
+    const newText = (edit as { newText?: unknown }).newText;
+    if (typeof oldText !== "string" || typeof newText !== "string") continue;
+    const index = content.indexOf(oldText);
+    if (index === -1) return undefined;
+    content = `${content.slice(0, index)}${newText}${content.slice(index + oldText.length)}`;
+  }
+  return content;
+}
+
+function validateStoryContent(content: unknown): string | undefined {
+  if (typeof content !== "string") return undefined;
+  const issues = validateStoryDone(content).filter((issue) => issue.severity === "error");
+  if (issues.length === 0) return undefined;
+  return [
+    "BMAD Runtime story gate blocked premature done status:",
+    ...issues.slice(0, 8).map((issue) => `- ${issue.message}`),
+  ].join("\n");
+}
+
 export function isPlanningPhase(state: RuntimeState): boolean {
   return state.phase === "1-analysis" || state.phase === "2-planning" || state.mode === "interview";
 }
@@ -93,4 +130,16 @@ export function shouldBlockSprintStatusMutation(state: RuntimeState, cwd: string
 
   if (toolName === "write") return validateSprintWrite(input.content);
   return validateSprintEdit(input.edits);
+}
+
+export function shouldBlockStoryDoneMutation(state: RuntimeState, cwd: string, toolName: string, input: Record<string, unknown>): string | undefined {
+  if (!state.active) return undefined;
+  if (toolName !== "write" && toolName !== "edit") return undefined;
+
+  const rel = normalizeToolPath(cwd, input.path ?? input.file_path);
+  if (!rel || !isStoryPath(rel)) return undefined;
+
+  if (toolName === "write") return validateStoryContent(input.content);
+  const simulated = applyEditsToCurrentFile(cwd, input);
+  return validateStoryContent(simulated);
 }

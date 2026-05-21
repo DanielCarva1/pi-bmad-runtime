@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { findCatalogRow, loadBmadCatalog, type BmadCatalogRow } from "./catalog.js";
-import { shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation } from "./gates.js";
+import { shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation, shouldBlockStoryDoneMutation } from "./gates.js";
 import { loadPathConfig } from "./paths.js";
 import { recommendNext, summarizeCompletion } from "./scanner.js";
 import { loadSprintStatus, summarizeSprint, validateSprintDocument } from "./sprint.js";
@@ -280,6 +280,8 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
     const input = event.input as Record<string, unknown>;
     const sprintReason = shouldBlockSprintStatusMutation(state, ctx.cwd, event.toolName, input);
     if (sprintReason) return { block: true, reason: sprintReason };
+    const storyReason = shouldBlockStoryDoneMutation(state, ctx.cwd, event.toolName, input);
+    if (storyReason) return { block: true, reason: storyReason };
     const planningReason = shouldBlockMutationInPlanning(state, ctx.cwd, event.toolName, input);
     if (planningReason) return { block: true, reason: planningReason };
   });

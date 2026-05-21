@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation } from "../extensions/bmad-runtime/gates.js";
+import { shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation, shouldBlockStoryDoneMutation } from "../extensions/bmad-runtime/gates.js";
 import { createDefaultState } from "../extensions/bmad-runtime/state.js";
 
 const cwd = process.cwd();
@@ -60,5 +60,16 @@ describe("sprint status gate", () => {
       content: "development_status:\n  1-1-test: shipped\n",
     });
     expect(reason).toContain("Illegal story status");
+  });
+});
+
+describe("story done gate", () => {
+  it("blocks full story writes that mark incomplete stories done", () => {
+    const state = { ...createDefaultState(), active: true, phase: "4-implementation" as const, mode: "autonomous" as const };
+    const reason = shouldBlockStoryDoneMutation(state, cwd, "write", {
+      path: "_bmad-output/implementation-artifacts/1-1-test-story.md",
+      content: `# Story 1.1: Test\n\nStatus: done\n\n## Tasks / Subtasks\n\n- [ ] Finish\n\n## Dev Agent Record\n\n### File List\n`,
+    });
+    expect(reason).toContain("premature done");
   });
 });

@@ -45,8 +45,8 @@
 - [x] Sprint status parser/validator.
 - [x] Basic sprint status transition gate.
 - [x] Sprint summary surfaced in `/bmad status`.
+- [x] Validate story task/file-list/review-finding evidence before allowing story `done`.
 - [ ] Cross-check story file status against sprint status.
-- [ ] Validate review findings before allowing `done`.
 - [ ] Create-story → dev-story → review loop.
 - [ ] Offset-1 pipeline support with WIP gates.
 - [ ] Done gate validator.
