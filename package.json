@@ -1,0 +1,47 @@
+{
+  "name": "pi-bmad-runtime",
+  "version": "0.1.0",
+  "description": "BMAD Runtime for Pi: stateful orchestration, gates, and workflow control for BMAD Method inside pi.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "bmad",
+    "workflow",
+    "orchestration",
+    "coding-agent"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zico/pi-bmad-runtime.git"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.75.1",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/bmad-runtime/index.ts"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ],
+    "image": "https://pi.dev/logo-auto.svg"
+  }
+}
