@@ -1,8 +1,9 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { findCatalogRow, loadBmadCatalog, type BmadCatalogRow } from "./catalog.js";
-import { shouldBlockMutationInPlanning } from "./gates.js";
+import { shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation } from "./gates.js";
 import { loadPathConfig } from "./paths.js";
 import { recommendNext, summarizeCompletion } from "./scanner.js";
+import { loadSprintStatus, summarizeSprint, validateSprintDocument } from "./sprint.js";
 import { activateState, deactivateState, isAutonomousPhase, loadState, recordWorkflowLaunch, saveState, setPhase, type RuntimePhase } from "./state.js";
 import { commandHelp, formatRecommendation, formatState } from "./ui.js";
 
@@ -199,8 +200,17 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
       }
 
       if (cmd === "status" || cmd === "next" || cmd === "") {
-        const { catalog, rec } = loadRecommendation(ctx.cwd);
+        const { catalog, cfg, rec } = loadRecommendation(ctx.cwd);
         const summary = summarizeCompletion(rec.completions);
+        const sprint = loadSprintStatus(cfg);
+        const sprintLines = sprint.doc
+          ? [
+              `Sprint status: ${sprint.path}`,
+              `Sprint entries: ${sprint.doc.entries.length}`,
+              `Sprint validation errors: ${validateSprintDocument(sprint.doc).filter((issue) => issue.severity === "error").length}`,
+              `Sprint summary: ${JSON.stringify(summarizeSprint(sprint.doc))}`,
+            ]
+          : [`Sprint status: ${sprint.exists ? `error: ${sprint.error}` : `not found at ${sprint.path}`}`];
         const text = [
           "# BMAD Runtime Status",
           "",
@@ -211,6 +221,7 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
           `BMAD catalog: ${catalog.exists ? catalog.path : "not found"}`,
           catalog.error ? `Catalog error: ${catalog.error}` : `Catalog rows: ${catalog.rows.length}`,
           `Heuristic completion: ${summary.complete}/${summary.total}`,
+          ...sprintLines,
           "",
           formatRecommendation(rec),
         ].join("\n");
@@ -266,8 +277,11 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
 
   pi.on("tool_call", async (event, ctx) => {
     const state = loadState(ctx.cwd);
-    const reason = shouldBlockMutationInPlanning(state, ctx.cwd, event.toolName, event.input as Record<string, unknown>);
-    if (reason) return { block: true, reason };
+    const input = event.input as Record<string, unknown>;
+    const sprintReason = shouldBlockSprintStatusMutation(state, ctx.cwd, event.toolName, input);
+    if (sprintReason) return { block: true, reason: sprintReason };
+    const planningReason = shouldBlockMutationInPlanning(state, ctx.cwd, event.toolName, input);
+    if (planningReason) return { block: true, reason: planningReason };
   });
 
   pi.on("session_start", async (_event, ctx) => {

@@ -26,7 +26,7 @@
 
 ## Milestone 3 — Grill Gate Integration
 
-- [ ] `/bmad grill` command.
+- [x] `/bmad grill` command.
 - [ ] Automatic grill recommendations before PRD finalization.
 - [ ] CONTEXT.md and ADR detection surfaced in `/bmad status`.
 - [ ] Planning artifacts include links to grill outputs.
@@ -41,8 +41,12 @@
 
 ## Milestone 5 — Autonomous Phase 3/4 Runner
 
-- [ ] `/bmad autopilot` command.
-- [ ] Sprint status parser/validator.
+- [x] `/bmad autopilot` command.
+- [x] Sprint status parser/validator.
+- [x] Basic sprint status transition gate.
+- [x] Sprint summary surfaced in `/bmad status`.
+- [ ] Cross-check story file status against sprint status.
+- [ ] Validate review findings before allowing `done`.
 - [ ] Create-story → dev-story → review loop.
 - [ ] Offset-1 pipeline support with WIP gates.
 - [ ] Done gate validator.
