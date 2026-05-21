@@ -1,0 +1,7 @@
+node_modules/
+.pi/
+.bmad-runtime/
+.git/
+.env
+.env.*
+*.log
