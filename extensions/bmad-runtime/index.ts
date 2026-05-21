@@ -11,7 +11,7 @@ const VALID_PHASES: RuntimePhase[] = ["0-init", "1-analysis", "2-planning", "3-s
 function kickoffPrompt(): string {
   return `/skill:bmad-runtime-for-pi start interview
 
-You are now inside BMAD Runtime for Pi. Start the orchestrator interview. First determine whether this is a new product, an existing project, a quick-flow change, full BMAD Method, Enterprise, or custom module path. Use Portuguese unless project config says otherwise.`;
+You are now inside BMAD Runtime for Pi. Start the orchestrator interview. First determine whether this is a new product, an existing project, a quick-flow change, full BMAD Method, Enterprise, or custom module path. Use the user's current language unless project config says otherwise.`;
 }
 
 function runtimeContext(stateText: string, recommendationText: string): string {

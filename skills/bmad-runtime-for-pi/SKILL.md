@@ -123,7 +123,7 @@ Use the installed BMAD catalog if present. Default BMad Method flow:
 
 ## Communication Style
 
-- Speak Portuguese with Daniel unless project config says otherwise.
+- Speak in the user's current language unless project config says otherwise.
 - Be concise but not shallow.
 - For decisions, state recommendation plus why.
 - For gates, be explicit about what evidence is missing.
