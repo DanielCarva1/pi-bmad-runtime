@@ -6,8 +6,8 @@ BMAD Runtime for Pi turns BMAD Method from prompt-only guidance into a stateful 
 
 Early local package. This repository is intentionally separate from `zico-os` and contains package-owned resources only.
 
-- Package source: `C:/Daniel-D/AgentPlatformRepos/pi-bmad-runtime`
-- Example builder/evidence workspace: `C:/Daniel-D/AgentPlatformRepos/pi-bmad-builder`
+- Repository: `https://github.com/DanielCarva1/pi-bmad-runtime`
+- Install mode: Pi project-local package, usually via pinned Git tag.
 
 ## What the package contains
 
@@ -31,32 +31,36 @@ Generated host-project artifacts are **not** package resources. They live in the
 
 Pi supports npm, git and local-path packages. Project-local installs use `-l` so the package is written to the current project `.pi/settings.json` instead of user settings.
 
-### Local path install
+### Git install — recommended for teammates
 
-Use this during local development:
+Use a pinned release tag when installing from GitHub:
 
 ```bash
-pi install -l C:/Daniel-D/AgentPlatformRepos/pi-bmad-runtime
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.1.1
 ```
 
-Or use a relative path from the project root:
+If the repository is private, make sure the teammate has collaborator/member access first.
+
+### Local path install — only after cloning this package repo
+
+Use this only if `pi-bmad-runtime` has already been cloned next to the target project:
 
 ```bash
 pi install -l ../pi-bmad-runtime
 ```
 
-Try for one session without changing settings:
+Try a cloned local package for one session without changing settings:
 
 ```bash
-pi -e C:/Daniel-D/AgentPlatformRepos/pi-bmad-runtime
+pi -e ../pi-bmad-runtime
 ```
 
-### Git install
+### Git install details
 
 Use a pinned ref when installing from git:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.1.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.1.1
 ```
 
 During private development, use the appropriate HTTPS or SSH repository URL and pin a tag or commit. Pi will clone to `.pi/git/` for project-local installs.
@@ -66,7 +70,7 @@ During private development, use the appropriate HTTPS or SSH repository URL and 
 This package is prepared for npm-style packaging, but this story does **not** publish it. Once published, install with:
 
 ```bash
-pi install -l npm:pi-bmad-runtime@0.1.0
+pi install -l npm:pi-bmad-runtime@0.1.1
 ```
 
 Until publication, validate the package shape locally:
@@ -108,7 +112,7 @@ npm pack --dry-run
 ### New project
 
 ```bash
-pi install -l C:/Daniel-D/AgentPlatformRepos/pi-bmad-runtime
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.1.1
 pi
 # inside Pi
 /bmad init --record-evidence
@@ -154,7 +158,7 @@ Send a teammate the repository URL and tell them to install it as a project-loca
 
 ```bash
 cd <their-project>
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.1.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.1.1
 pi
 ```
 
@@ -169,7 +173,7 @@ Then, inside Pi:
 For private repositories, the teammate must have GitHub access first. If their machine uses SSH-only GitHub access, they can install with:
 
 ```bash
-pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.1.0
+pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.1.1
 ```
 
 ## Validate package shape

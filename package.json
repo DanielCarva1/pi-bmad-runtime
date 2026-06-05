@@ -1,6 +1,6 @@
 {
   "name": "pi-bmad-runtime",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "BMAD Runtime for Pi: stateful orchestration, gates, and workflow control for BMAD Method inside pi.",
   "type": "module",
   "license": "MIT",
