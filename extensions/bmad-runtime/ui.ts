@@ -1,3 +1,4 @@
+import type { AutopilotRecommendation } from "./autopilot.js";
 import type { BmadCatalogRow } from "./catalog.js";
 import type { Recommendation } from "./scanner.js";
 import type { RuntimeState } from "./state.js";
@@ -37,9 +38,135 @@ export function formatState(state: RuntimeState): string {
   ].join("\n");
 }
 
+
+const PHASE_LABELS: Record<string, string> = {
+  "0-init": "Setup / not initialized",
+  "1-analysis": "Analysis / discovery",
+  "2-planning": "Planning / PRD + UX",
+  "3-solutioning": "Solutioning / architecture + epics + readiness",
+  "4-implementation": "Implementation / sprint + story loop",
+  anytime: "Anytime helper",
+};
+
+function phaseLabel(phase: string): string {
+  return PHASE_LABELS[phase] ? `${phase} — ${PHASE_LABELS[phase]}` : phase;
+}
+
+function dash(value: string | null | undefined): string {
+  return value && value.trim().length > 0 ? value : "-";
+}
+
+function workflowCommand(row: BmadCatalogRow): string {
+  const target = row.menuCode || row.skill;
+  const invocation = row.action ? `${target} ${row.action}` : target;
+  return `/bmad run ${invocation}`;
+}
+
+function formatWorkflowChoice(row: BmadCatalogRow): string {
+  const code = row.menuCode ? `[${row.menuCode}] ` : "";
+  const required = row.required ? "required" : "optional";
+  const desc = row.description ? ` — ${row.description}` : "";
+  return `- ${code}${row.displayName || row.skill}: \`${workflowCommand(row)}\` (skill: \`${row.skill}\`, ${required})${desc}`;
+}
+
+function uniqueRows(rows: BmadCatalogRow[]): BmadCatalogRow[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = `${row.menuCode || row.skill}:${row.action || ""}:${row.displayName || row.skill}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export interface RuntimeHelpInput {
+  state: RuntimeState;
+  recommendation: Recommendation;
+  catalogRows: BmadCatalogRow[];
+  phase4Autopilot?: AutopilotRecommendation;
+}
+
+export function formatRuntimeHelp({ state, recommendation, catalogRows, phase4Autopilot }: RuntimeHelpInput): string {
+  const currentPhaseRows = uniqueRows(catalogRows.filter((row) => row.phase === state.phase));
+  const anytimeRows = uniqueRows(catalogRows.filter((row) => row.phase === "anytime" && ["Core", "BMad Method"].includes(row.module))).slice(0, 10);
+  const lastRun = state.workflowHistory.at(-1);
+  const nextLine = phase4Autopilot
+    ? `Phase 4 autopilot: **${phase4Autopilot.action}** — ${phase4Autopilot.reason}`
+    : recommendation.row
+      ? `Next recommended workflow: ${formatRow(recommendation.row)}`
+      : "Next recommended workflow: ✅ none detected";
+
+  return [
+    "# BMAD Help",
+    "",
+    "Use this when you are inside `pi` and want to understand where you are in Pi+BMad and what to run next.",
+    "",
+    "## Current BMAD position",
+    "",
+    `- Runtime active: **${state.active}**`,
+    `- Mode: **${state.mode}**`,
+    `- Track: **${state.track}**`,
+    `- Phase: **${phaseLabel(state.phase)}**`,
+    `- Current workflow: **${dash(state.currentWorkflow)}**`,
+    `- Current story: **${dash(state.currentStory)}**`,
+    `- Last workflow: **${lastRun ? `${lastRun.skill} @ ${lastRun.launchedAt}` : "-"}**`,
+    `- Updated at: **${state.updatedAt}**`,
+    `- ${nextLine}`,
+    "",
+    "## Core framework commands",
+    "",
+    "- `/bmad init` — initialize runtime state and artifact folders in this project",
+    "- `/bmad init --record-evidence` — initialize and write an evidence packet",
+    "- `/bmad start` — activate Pi+BMad and start the orchestrator interview",
+    "- `/bmad status` — show state, gates, artifacts, adapters, sprint status and recommendation",
+    "- `/bmad next` — show the next BMAD recommendation",
+    "- `/bmad run next` — launch the next recommended workflow",
+    "- `/bmad run <code|skill>` — launch a workflow from the BMAD catalog, e.g. `/bmad run CP`",
+    "- `/bmad phase <phase>` — set phase: `1-analysis`, `2-planning`, `3-solutioning`, `4-implementation`",
+    "- `/bmad autonomous` — enable autonomous Phase 3/4 mode",
+    "- `/bmad autopilot` — execute the next autonomous story-loop action with checks and evidence",
+    "- `/bmad review <story>` — run Blind Hunter, Edge Case Hunter and Acceptance Auditor review roles",
+    "- `/bmad health` — diagnose package/config/state/artifacts/adapters",
+    "- `/bmad readiness` — show implementation readiness gate",
+    "- `/bmad grill [target]` — run grill-with-docs pressure testing",
+    "- `/bmad help` — show BMAD runtime command reference",
+    "- `/bmad-help` — show this contextual help screen",
+    "- `/bmad exit` — deactivate the runtime lock",
+    "",
+    "## Workflows for the current phase",
+    "",
+    ...(currentPhaseRows.length ? currentPhaseRows.map(formatWorkflowChoice) : ["- No catalog workflows found for this phase."]),
+    "",
+    "## Useful anytime BMAD helpers",
+    "",
+    ...(anytimeRows.length ? anytimeRows.map(formatWorkflowChoice) : ["- No anytime helpers found in the BMAD catalog."]),
+    "",
+    "## Startup pattern",
+    "",
+    "```bash",
+    "cd <your-project>",
+    "pi",
+    "```",
+    "",
+    "Then inside Pi:",
+    "",
+    "```text",
+    "/bmad init",
+    "/bmad start",
+    "/bmad-help",
+    "```",
+  ].join("\n");
+}
+
 export function commandHelp(): string {
   return `BMAD Runtime for Pi commands:
 
+/bmad init            Initialize local runtime state, project identity, baseline lock, and artifact folders
+/bmad init --record-evidence    Initialize and append a project evidence packet
+/bmad health          Diagnose package, BMAD config, state, artifacts, agents, and optional adapters
+/bmad health --record-evidence  Run health and append a project evidence packet
+/bmad readiness       Show implementation readiness gate card
+/bmad transition      Show accept/review/cancel confirmation for the next BMAD transition
 /bmad start           Activate runtime and start the orchestrator interview
 /bmad status          Show state, catalog detection, and next recommendation
 /bmad next            Show the next BMAD recommendation
@@ -50,8 +177,10 @@ export function commandHelp(): string {
 /bmad phase <phase>   Set phase: 1-analysis | 2-planning | 3-solutioning | 4-implementation
 /bmad autonomous      Switch to Phase 3/4 autonomous mode
 /bmad autopilot       Switch to autonomous mode and launch the next required workflow
+/bmad review <story>  Run BMAD parallel review roles and write review evidence
 /bmad interview       Switch to human-in-loop interview mode
 /bmad grill [target]  Run grill-with-docs against current plan or target
 /bmad exit            Deactivate runtime lock
-/bmad help            Show this help`;
+/bmad help            Show command reference
+/bmad-help            Show contextual stage + command help`;
 }

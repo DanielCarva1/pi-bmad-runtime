@@ -29,6 +29,10 @@ As a user, I want a thing.
 
 ## Dev Agent Record
 
+### Debug Log References
+
+- npm test — passed.
+
 ### Completion Notes List
 
 Done.
@@ -36,6 +40,14 @@ Done.
 ### File List
 
 - src/thing.ts
+
+## Senior Developer Review (AI)
+
+**Outcome:** Approve
+
+### Findings
+
+Clean review. No decision-needed, patch, or defer findings.
 `;
 
 describe("story parser", () => {

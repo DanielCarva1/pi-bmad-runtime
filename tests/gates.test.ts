@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation, shouldBlockStoryDoneMutation } from "../extensions/bmad-runtime/gates.js";
+import { shouldBlockDangerousToolCall, shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation, shouldBlockStoryDoneMutation } from "../extensions/bmad-runtime/gates.js";
 import { createDefaultState } from "../extensions/bmad-runtime/state.js";
 
 const cwd = process.cwd();
@@ -60,6 +60,14 @@ describe("sprint status gate", () => {
       content: "development_status:\n  1-1-test: shipped\n",
     });
     expect(reason).toContain("Illegal story status");
+  });
+});
+
+describe("dangerous action gate", () => {
+  it("blocks publish and destructive shell commands", () => {
+    const state = { ...createDefaultState(), active: true, phase: "4-implementation" as const, mode: "autonomous" as const };
+    expect(shouldBlockDangerousToolCall(state, cwd, "bash", { command: "npm publish" })).toContain("safety gate blocked");
+    expect(shouldBlockDangerousToolCall(state, cwd, "bash", { command: "rm -rf /tmp/example" })).toContain("safety gate blocked");
   });
 });
 

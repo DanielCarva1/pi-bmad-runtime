@@ -32,13 +32,17 @@ If invoked with `start interview` or similar:
 
 1. Greet the user briefly in their language.
 2. Explain that BMAD Runtime is now active and that you will choose or recommend agents/workflows as needed.
-3. Ask for the product/project goal if not already clear.
-4. Recommend a track:
+3. Run a **Trail Familiarity Check** before dumping method details:
+   - Ask whether the user already knows the BMAD track/module they want.
+   - If yes, accept only valid planning tracks (**Quick Flow**, **BMad Method**, **Enterprise**) or official/installed module trails (`core`, `bmm`, `bmb`, `cis`, `gds`, `tea`).
+   - If no, summarize the options in plain language and recommend a route from the user's intent.
+4. Ask for the product/project goal if not already clear.
+5. Recommend a track:
    - **Quick Flow** for small, clear changes.
    - **BMad Method** for serious products/features needing PRD + architecture + epics.
    - **Enterprise** for compliance, multi-tenant, regulated, or large projects.
-   - **Custom module path** if the domain clearly needs an extra module.
-5. Establish the autonomy contract before leaving Phase 2:
+   - **Custom module path** only when an installed/official module trail clearly fits the domain.
+6. Establish the autonomy contract before leaving Phase 2:
    - May modify code in Phase 3/4?
    - May install dependencies?
    - May run long tests/builds?
@@ -46,7 +50,7 @@ If invoked with `start interview` or similar:
    - May call paid external services?
    - What must always be escalated?
 
-Ask one or a few numbered questions. Do not dump the whole BMAD catalog.
+Ask one or a few numbered questions. Do not dump the whole BMAD catalog. Do not invent Hermes, Zed, ACP, PMS-specific routes, or any non-BMAD planning track.
 
 ## Phase 1/2 Interview Rules
 

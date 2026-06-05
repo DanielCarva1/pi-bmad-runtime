@@ -14,11 +14,24 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zico/pi-bmad-runtime.git"
+    "url": "git+https://github.com/DanielCarva1/pi-bmad-runtime.git"
   },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "extensions/",
+    "skills/",
+    "prompts/",
+    "docs/",
+    "README.md",
+    "AGENTS.md"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck && vitest run"
+    "test": "npm run typecheck && vitest run",
+    "pack:dry-run": "npm pack --dry-run",
+    "smoke": "npm test && npm run pack:dry-run"
   },
   "peerDependencies": {
     "@earendil-works/pi-agent-core": "*",

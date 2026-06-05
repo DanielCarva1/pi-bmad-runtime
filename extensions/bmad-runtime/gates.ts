@@ -143,3 +143,39 @@ export function shouldBlockStoryDoneMutation(state: RuntimeState, cwd: string, t
   const simulated = applyEditsToCurrentFile(cwd, input);
   return validateStoryContent(simulated);
 }
+
+export function shouldBlockDangerousToolCall(state: RuntimeState, cwd: string, toolName: string, input: Record<string, unknown>): string | undefined {
+  if (!state.active) return undefined;
+
+  const command = typeof input.command === "string" ? input.command : "";
+  const lower = command.toLowerCase();
+  const dangerousPatterns = [
+    /\brm\s+-rf\b/,
+    /\brmdir\s+\/s\b/,
+    /\bdel\s+\/f\b/,
+    /\bnpm\s+publish\b/,
+    /\bpnpm\s+publish\b/,
+    /\byarn\s+npm\s+publish\b/,
+    /\bgit\s+push\b/,
+    /\bdeploy\b/,
+    /\bkubectl\b/,
+    /\bterraform\s+apply\b/,
+    /\bsecret\b.*\b(token|key|password)\b/,
+  ];
+  if (toolName === "bash" && dangerousPatterns.some((pattern) => pattern.test(lower))) {
+    return [
+      "BMAD Runtime safety gate blocked a potentially destructive/external/credential/publish action.",
+      `Command: ${command}`,
+      "This requires explicit owner confirmation and recorded evidence before proceeding.",
+    ].join("\n");
+  }
+
+  const rel = normalizeToolPath(cwd, input.path ?? input.file_path);
+  if ((toolName === "write" || toolName === "edit") && rel?.startsWith("../")) {
+    return [
+      "BMAD Runtime safety gate blocked a write outside the active workspace.",
+      `Path: ${rel}`,
+      "Reference-project writes require explicit owner confirmation.",
+    ].join("\n");
+  }
+}

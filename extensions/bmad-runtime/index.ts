@@ -1,19 +1,36 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { formatPackageAdapters, scanPackageAdapters } from "./adapters.js";
+import { formatArtifactRegistry, scanArtifactRegistry } from "./artifacts.js";
+import { buildAutopilotExecutionPlan, formatAutopilotRecommendation, recommendPhase4Autopilot } from "./autopilot.js";
 import { findCatalogRow, loadBmadCatalog, type BmadCatalogRow } from "./catalog.js";
-import { shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation, shouldBlockStoryDoneMutation } from "./gates.js";
+import { formatConfigValidation, validateRuntimeConfig } from "./config.js";
+import { recordRuntimeEvidence } from "./evidence.js";
+import { shouldBlockDangerousToolCall, shouldBlockMutationInPlanning, shouldBlockSprintStatusMutation, shouldBlockStoryDoneMutation } from "./gates.js";
+import { formatGrillClosureRecommendation, recommendGrillClosure } from "./grill.js";
+import { formatHealthReport, runHealthCheck } from "./health.js";
+import { formatLedgerSummary, summarizeLedger } from "./ledger.js";
 import { loadPathConfig } from "./paths.js";
+import { ensureProjectInitialized, formatProjectInitResult } from "./project.js";
+import { evaluateReadinessGate, formatGateCard } from "./readiness.js";
+import { formatReviewRunResult, runParallelReviewDelegation } from "./review.js";
 import { recommendNext, summarizeCompletion } from "./scanner.js";
 import { loadSprintStatus, summarizeSprint, validateSprintDocument } from "./sprint.js";
 import { scanStoryStatusFiles } from "./story.js";
 import { activateState, deactivateState, isAutonomousPhase, loadState, recordWorkflowLaunch, saveState, setPhase, type RuntimePhase } from "./state.js";
-import { commandHelp, formatRecommendation, formatState } from "./ui.js";
+import { formatTransitionPrompt } from "./transition.js";
+import { commandHelp, formatRecommendation, formatRuntimeHelp, formatState } from "./ui.js";
 
 const VALID_PHASES: RuntimePhase[] = ["0-init", "1-analysis", "2-planning", "3-solutioning", "4-implementation", "anytime"];
 
 function kickoffPrompt(): string {
   return `/skill:bmad-runtime-for-pi start interview
 
-You are now inside BMAD Runtime for Pi. Start the orchestrator interview. First determine whether this is a new product, an existing project, a quick-flow change, full BMAD Method, Enterprise, or custom module path. Use the user's current language unless project config says otherwise.`;
+You are now inside BMAD Runtime for Pi. Start the orchestrator interview with a Trail Familiarity Check:
+1. Ask whether the user already knows the BMAD track/module they want.
+2. If yes, accept only valid planning tracks (Quick Flow, BMad Method, Enterprise) or installed/official module trails (core, bmm, bmb, cis, gds, tea).
+3. If no, summarize the options briefly in natural language and recommend a route from the user's intent.
+4. Ask for the product/project goal if it is not already clear.
+Do not require the user to memorize slash commands. Do not invent Hermes, Zed, ACP, or PMS-specific paths. Use the user's current language unless project config says otherwise.`;
 }
 
 function runtimeContext(stateText: string, recommendationText: string): string {
@@ -29,6 +46,8 @@ Operating rules:
 - BMAD artifacts and runtime state are source of truth, not chat memory.
 - Phase 1/2 are human-in-loop interview and planning phases: ask hard questions, use grill-with-docs for terminology/decision pressure, and do not mutate product code.
 - Phase 3/4 are autonomous by default: execute BMAD workflows without routine user involvement, asking only for true blockers from the autonomy contract.
+- Free-form user questions are allowed, but keep the BMAD anchor visible: current project, mode/phase, current workflow, and next trail step when relevant.
+- Free exploration is not gate approval. Canonical artifact promotion, phase advancement, readiness, waiver, or done status requires explicit artifact/gate evidence.
 - Do not escape BMAD Runtime unless the user explicitly runs /bmad exit.
 - Prefer fresh context windows for workflow runs.
 [/BMAD RUNTIME FOR PI ACTIVE]`;
@@ -39,6 +58,22 @@ function loadRecommendation(cwd: string) {
   const cfg = loadPathConfig(cwd);
   const rec = recommendNext(catalog.rows, cfg);
   return { catalog, cfg, rec };
+}
+
+
+
+function formatRuntimeRecommendation(cwd: string, state = loadState(cwd)): string {
+  const { cfg, rec } = loadRecommendation(cwd);
+  const sprint = loadSprintStatus(cfg);
+  if (state.phase === "4-implementation" && sprint.doc) return formatAutopilotRecommendation(recommendPhase4Autopilot(sprint.doc, cfg));
+  return formatRecommendation(rec);
+}
+
+function buildRuntimeHelpContent(cwd: string, state = loadState(cwd)): string {
+  const { catalog, cfg, rec } = loadRecommendation(cwd);
+  const sprint = loadSprintStatus(cfg);
+  const phase4Autopilot = state.phase === "4-implementation" && sprint.doc ? recommendPhase4Autopilot(sprint.doc, cfg) : undefined;
+  return formatRuntimeHelp({ state, recommendation: rec, catalogRows: catalog.rows, phase4Autopilot });
 }
 
 type FreshLaunchMode = "ask" | "always" | "never";
@@ -107,10 +142,18 @@ async function sendWorkflowInvocation(args: string, ctx: any, prompt: string, fr
 }
 
 export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
+
+  pi.registerCommand("bmad-help", {
+    description: "Show contextual Pi+BMad stage, next step, and command help",
+    handler: async (_rawArgs, ctx) => {
+      pi.sendMessage({ customType: "bmad-runtime-help", content: buildRuntimeHelpContent(ctx.cwd), display: true }, { triggerTurn: false });
+    },
+  });
+
   pi.registerCommand("bmad", {
     description: "BMAD Runtime for Pi: stateful BMAD orchestration, gates, and workflow launch",
     getArgumentCompletions(prefix: string) {
-      const items = ["start", "status", "next", "run", "phase", "autonomous", "autopilot", "interview", "grill", "exit", "help"];
+      const items = ["init", "health", "readiness", "transition", "start", "status", "next", "run", "phase", "autonomous", "autopilot", "review", "interview", "grill", "exit", "help"];
       return items.filter((item) => item.startsWith(prefix)).map((item) => ({ value: item, label: item }));
     },
     handler: async (rawArgs, ctx) => {
@@ -119,7 +162,62 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
       let state = loadState(ctx.cwd);
 
       if (cmd === "help" || cmd === "--help" || cmd === "-h") {
-        ctx.ui.notify(commandHelp(), "info");
+        pi.sendMessage({ customType: "bmad-runtime-help", content: buildRuntimeHelpContent(ctx.cwd, state), display: true }, { triggerTurn: false });
+        return;
+      }
+
+      if (cmd === "init") {
+        const result = ensureProjectInitialized(ctx.cwd);
+        state = loadState(ctx.cwd);
+        pi.appendEntry("bmad-runtime-init", result);
+        pi.appendEntry("bmad-runtime-state", state);
+        const recordEvidence = rest.includes("--record-evidence") || rest.includes("--evidence");
+        const evidence = recordEvidence
+          ? recordRuntimeEvidence(ctx.cwd, {
+              command: "/bmad init",
+              outcome: "ok",
+              summary: "Project initialization completed.",
+              touchedPaths: [...result.created, ...result.reused, ...result.skipped],
+              counts: { created: result.created.length, reused: result.reused.length, skipped: result.skipped.length },
+              details: { projectId: result.identity.projectId, baseline: result.baseline },
+            })
+          : undefined;
+        ctx.ui.notify(`${formatProjectInitResult(result)}${evidence ? `\n\nEvidence: ${evidence.relativePath}` : ""}`, "info");
+        return;
+      }
+
+      if (cmd === "health" || cmd === "doctor") {
+        const report = runHealthCheck(ctx.cwd);
+        pi.appendEntry("bmad-runtime-health", report);
+        const recordEvidence = rest.includes("--record-evidence") || rest.includes("--evidence");
+        const evidence = recordEvidence
+          ? recordRuntimeEvidence(ctx.cwd, {
+              command: "/bmad health",
+              outcome: report.counts.blocked > 0 ? "blocked" : report.counts.degraded > 0 ? "degraded" : report.counts.warning > 0 ? "warning" : "ok",
+              summary: `Health check completed with ok=${report.counts.ok}, warning=${report.counts.warning}, degraded=${report.counts.degraded}, blocked=${report.counts.blocked}.`,
+              packageVersion: report.packageVersion,
+              counts: report.counts,
+              details: report.findings,
+            })
+          : undefined;
+        const content = `${formatHealthReport(report)}${evidence ? `\n\nEvidence: ${evidence.relativePath}` : ""}`;
+        pi.sendMessage({ customType: "bmad-runtime", content, display: true }, { triggerTurn: false });
+        return;
+      }
+
+      if (cmd === "readiness") {
+        const cfg = loadPathConfig(ctx.cwd);
+        const artifacts = scanArtifactRegistry(cfg);
+        const readiness = evaluateReadinessGate(cfg, artifacts);
+        pi.sendMessage({ customType: "bmad-runtime", content: formatGateCard(readiness), display: true }, { triggerTurn: false });
+        return;
+      }
+
+      if (cmd === "transition") {
+        const { rec } = loadRecommendation(ctx.cwd);
+        const cfg = loadPathConfig(ctx.cwd);
+        const artifacts = scanArtifactRegistry(cfg).filter((entry) => entry.requiredForReadiness && entry.status !== "missing").map((entry) => `${entry.label}: ${entry.path}`);
+        pi.sendMessage({ customType: "bmad-runtime", content: formatTransitionPrompt({ current: `${state.phase}/${state.currentWorkflow ?? "-"}`, destination: rec.row?.displayName ?? rec.row?.skill ?? "next BMAD step", artifacts, gate: "BMAD gate evidence required before state advancement" }), display: true }, { triggerTurn: false });
         return;
       }
 
@@ -157,6 +255,29 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
         ctx.ui.notify(`BMAD autonomous mode enabled.\n${formatState(state)}`, "warning");
 
         if (cmd === "autopilot") {
+          const cfg = loadPathConfig(ctx.cwd);
+          const sprint = loadSprintStatus(cfg);
+          if (state.phase === "4-implementation" && sprint.doc) {
+            const auto = recommendPhase4Autopilot(sprint.doc, cfg);
+            const plan = buildAutopilotExecutionPlan(auto);
+            pi.sendMessage({ customType: "bmad-runtime", content: `${formatAutopilotRecommendation(auto)}
+
+${plan.prompt}`, display: true }, { triggerTurn: false });
+            if (auto.action === "complete" || auto.action === "blocked" || !auto.skill) return;
+            state = saveState(
+              ctx.cwd,
+              recordWorkflowLaunch({ ...state, phase: "4-implementation", currentStory: auto.story?.key ?? state.currentStory }, {
+                skill: auto.skill,
+                displayName: auto.action,
+                phase: "4-implementation",
+                launchArgs: auto.story?.key ?? "",
+              }),
+            );
+            pi.appendEntry("bmad-runtime-state", state);
+            pi.sendUserMessage(plan.prompt);
+            return;
+          }
+
           const { catalog, rec } = loadRecommendation(ctx.cwd);
           const row = rec.row;
           if (!row) {
@@ -182,6 +303,27 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
         return;
       }
 
+      if (cmd === "review") {
+        const cfg = loadPathConfig(ctx.cwd);
+        const storyKey = rest[0] ?? state.currentStory ?? "";
+        if (!storyKey) {
+          ctx.ui.notify("Usage: /bmad review <story-key>", "error");
+          return;
+        }
+        const storyPath = `${cfg.implementation_artifacts}/${storyKey}.md`;
+        const run = await runParallelReviewDelegation({
+          cwd: ctx.cwd,
+          storyKey,
+          storyPath,
+          changedPaths: [storyPath],
+          acceptanceCriteria: ["All story acceptance criteria are satisfied", "No unresolved patch-required or decision-needed findings remain", "Evidence links to story done gate"],
+          evidenceLinks: [storyPath, `${cfg.implementation_artifacts}/sprint-status.yaml`],
+        });
+        pi.appendEntry("bmad-runtime-review", run);
+        pi.sendMessage({ customType: "bmad-runtime", content: formatReviewRunResult(run), display: true }, { triggerTurn: false });
+        return;
+      }
+
       if (cmd === "grill") {
         state = saveState(ctx.cwd, activateState(state));
         pi.appendEntry("bmad-runtime-state", state);
@@ -203,6 +345,12 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
       if (cmd === "status" || cmd === "next" || cmd === "") {
         const { catalog, cfg, rec } = loadRecommendation(ctx.cwd);
         const summary = summarizeCompletion(rec.completions);
+        const artifacts = scanArtifactRegistry(cfg);
+        const readiness = evaluateReadinessGate(cfg, artifacts);
+        const grillClosure = recommendGrillClosure(state, artifacts);
+        const adapters = scanPackageAdapters(ctx.cwd);
+        const configIssues = validateRuntimeConfig(ctx.cwd, cfg);
+        const ledger = summarizeLedger(state, cfg);
         const sprint = loadSprintStatus(cfg);
         const sprintStoryStatus = new Map(sprint.doc?.entries.filter((entry) => entry.kind === "story").map((entry) => [entry.key, entry.status]) ?? []);
         const storyFiles = scanStoryStatusFiles(cfg.implementation_artifacts);
@@ -220,6 +368,7 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
               ...storyMismatches.slice(0, 5).map((story) => `Mismatch: ${story.key} story=${story.status} sprint=${sprintStoryStatus.get(story.key)}`),
             ]
           : [`Sprint status: ${sprint.exists ? `error: ${sprint.error}` : `not found at ${sprint.path}`}`];
+        const phase4Autopilot = state.phase === "4-implementation" && sprint.doc ? recommendPhase4Autopilot(sprint.doc, cfg) : undefined;
         const text = [
           "# BMAD Runtime Status",
           "",
@@ -231,6 +380,18 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
           catalog.error ? `Catalog error: ${catalog.error}` : `Catalog rows: ${catalog.rows.length}`,
           `Heuristic completion: ${summary.complete}/${summary.total}`,
           ...sprintLines,
+          "",
+          formatArtifactRegistry(artifacts),
+          "",
+          formatGateCard(readiness),
+          "",
+          formatGrillClosureRecommendation(grillClosure),
+          "",
+          formatPackageAdapters(adapters),
+          "",
+          formatConfigValidation(configIssues),
+          "",
+          formatLedgerSummary(ledger),
           "",
           formatRecommendation(rec),
         ].join("\n");
@@ -271,9 +432,8 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
   pi.on("before_agent_start", async (_event, ctx) => {
     const state = loadState(ctx.cwd);
     if (!state.active) return;
-    const { rec } = loadRecommendation(ctx.cwd);
     const stateText = formatState(state);
-    const recommendationText = formatRecommendation(rec);
+    const recommendationText = formatRuntimeRecommendation(ctx.cwd, state);
     ctx.ui.setStatus("bmad-runtime", ctx.ui.theme.fg(isAutonomousPhase(state) ? "warning" : "accent", `BMAD ${state.phase}`));
     return {
       message: {
@@ -287,6 +447,8 @@ export default function bmadRuntimeExtension(pi: ExtensionAPI): void {
   pi.on("tool_call", async (event, ctx) => {
     const state = loadState(ctx.cwd);
     const input = event.input as Record<string, unknown>;
+    const dangerReason = shouldBlockDangerousToolCall(state, ctx.cwd, event.toolName, input);
+    if (dangerReason) return { block: true, reason: dangerReason };
     const sprintReason = shouldBlockSprintStatusMutation(state, ctx.cwd, event.toolName, input);
     if (sprintReason) return { block: true, reason: sprintReason };
     const storyReason = shouldBlockStoryDoneMutation(state, ctx.cwd, event.toolName, input);
