@@ -41,21 +41,24 @@ function runJson(label, args) {
 }
 
 try {
+  const publication = runJson("publication-status", ["scripts/publication-status.mjs", ...(checkRemote ? ["--check-remote"] : [])]);
+  const releaseComplete = publication.releaseComplete === true;
+  const objectiveArgs = releaseComplete && checkRemote
+    ? ["scripts/objective-readiness-audit.mjs", "--check-remote", "--verify-git-install"]
+    : ["scripts/objective-readiness-audit.mjs"];
   const checks = [
-    runJson("objective-readiness", ["scripts/objective-readiness-audit.mjs"]),
+    runJson("objective-readiness", objectiveArgs),
     runJson("context-budget", ["scripts/context-budget-audit.mjs"]),
     runJson("release-audit", ["scripts/release-audit.mjs"]),
     runJson("release-scope", ["scripts/release-scope.mjs"]),
-    runJson("publication-status", ["scripts/publication-status.mjs", ...(checkRemote ? ["--check-remote"] : [])]),
+    publication,
   ];
 
   const objective = checks.find((check) => check.label === "objective-readiness");
   const scope = checks.find((check) => check.label === "release-scope");
-  const publication = checks.find((check) => check.label === "publication-status");
   const ownerGated = (objective?.ownerGatedCount ?? 0) > 0 && objective?.parsed?.completionProven === false;
   const missingLocalEvidence = (objective?.missingCount ?? 0) > 0;
   const unclassifiedPaths = scope?.unclassifiedCount ?? 0;
-  const releaseComplete = publication?.releaseComplete === true;
   const checksOk = checks.every((check) => check.ok);
   const readyForOwnerDecision = checksOk && !missingLocalEvidence && unclassifiedPaths === 0 && ownerGated && !releaseComplete;
 
