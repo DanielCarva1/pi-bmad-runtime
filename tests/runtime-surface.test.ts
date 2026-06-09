@@ -2,8 +2,10 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import bmadRuntimeExtension from "../extensions/bmad-runtime/index.js";
 import { scanPackageAdapters } from "../extensions/bmad-runtime/adapters.js";
-import { buildAutopilotExecutionPlan, recommendPhase4Autopilot } from "../extensions/bmad-runtime/autopilot.js";
+import { buildPhase4AutomationExecutionPlan, recommendPhase4Automation } from "../extensions/bmad-runtime/phase4-automation.js";
+import { describeRuntimeBoundaries, formatRuntimeBoundaries } from "../extensions/bmad-runtime/boundaries.js";
 import { scanArtifactRegistry } from "../extensions/bmad-runtime/artifacts.js";
 import { validateRuntimeConfig } from "../extensions/bmad-runtime/config.js";
 import { createDelegationContract, detectDelegationCapability, runDelegationContract, validateDelegationContract, type SubagentsServiceLike } from "../extensions/bmad-runtime/delegation.js";
@@ -14,7 +16,7 @@ import { summarizeLedger } from "../extensions/bmad-runtime/ledger.js";
 import { loadPathConfig } from "../extensions/bmad-runtime/paths.js";
 import { ensureProjectInitialized } from "../extensions/bmad-runtime/project.js";
 import { parseSprintStatusText } from "../extensions/bmad-runtime/sprint.js";
-import { createDefaultState } from "../extensions/bmad-runtime/state.js";
+import { createDefaultState, saveState } from "../extensions/bmad-runtime/state.js";
 import { formatTransitionPrompt } from "../extensions/bmad-runtime/transition.js";
 import { commandHelp, formatRuntimeHelp } from "../extensions/bmad-runtime/ui.js";
 
@@ -38,6 +40,92 @@ afterEach(() => {
 });
 
 describe("runtime surface helpers", () => {
+  it("does not register a separate public automation command", () => {
+    const commands = new Map<string, { getArgumentCompletions?: (prefix: string) => { value: string; label: string }[] }>();
+    bmadRuntimeExtension({
+      registerCommand(name: string, spec: { getArgumentCompletions?: (prefix: string) => { value: string; label: string }[] }) {
+        commands.set(name, spec);
+      },
+      on() { /* noop */ },
+    } as any);
+
+    const bmad = commands.get("bmad");
+    const completions = bmad?.getArgumentCompletions?.("").map((item) => item.value) ?? [];
+
+    expect(commands.has("bmad-start")).toBe(true);
+    expect(completions).toContain("start");
+    expect(completions).toContain("projects");
+    expect(completions).toContain("resume");
+    expect(completions).not.toContain("autonomous");
+    expect(completions).not.toContain("autopilot");
+  });
+
+  it("launches Phase 4 workflow fresh without mechanical confirmation", async () => {
+    const root = makeRoot();
+    saveState(root, { ...createDefaultState(), active: true, mode: "autonomous", phase: "4-implementation", track: "bmad-method", currentStory: "5.2" });
+    const commands = new Map<string, { handler?: (rawArgs: string, ctx: any) => Promise<void> }>();
+    bmadRuntimeExtension({
+      registerCommand(name: string, spec: { handler?: (rawArgs: string, ctx: any) => Promise<void> }) {
+        commands.set(name, spec);
+      },
+      on() { /* noop */ },
+      appendEntry() { /* noop */ },
+      sendMessage() { /* noop */ },
+      setSessionName() { /* noop */ },
+      sendUserMessage() { /* noop */ },
+    } as any);
+
+    let confirmCalls = 0;
+    let freshPrompt = "";
+    await commands.get("bmad")?.handler?.("run bmad-dev-story 5-2-prompt-policy-para-blockers-reais-e-acoes-de-alto-risco", {
+      cwd: root,
+      hasUI: true,
+      sessionManager: { getSessionFile: () => "parent-session.json" },
+      ui: {
+        notify() { /* noop */ },
+        async confirm() {
+          confirmCalls += 1;
+          return false;
+        },
+        setStatus() { /* noop */ },
+        theme: { fg: (_kind: string, text: string) => text },
+      },
+      async newSession(options: { withSession: (nextCtx: { sendUserMessage: (prompt: string) => Promise<void> }) => Promise<void> }) {
+        await options.withSession({
+          async sendUserMessage(prompt: string) {
+            freshPrompt = prompt;
+          },
+        });
+      },
+    });
+
+    expect(confirmCalls).toBe(0);
+    expect(freshPrompt).toContain("/skill:bmad-dev-story 5-2-prompt-policy-para-blockers-reais-e-acoes-de-alto-risco");
+  });
+
+  it("describes runtime boundaries with responsibilities and write policies", () => {
+    const root = makeRoot();
+    const runtimeHome = path.join(makeRoot(), "runtime-home");
+    const targetCodeRepo = path.join(makeRoot(), "target-code-repo");
+
+    const boundaries = describeRuntimeBoundaries(root, {
+      packageRoot: process.cwd(),
+      runtimeHome,
+      targetCodeRepo,
+    });
+    const labels = boundaries.map((boundary) => boundary.label);
+    expect(labels).toEqual([
+      "Runtime Package",
+      "Runtime Home",
+      "Project Workspace",
+      "Target Code Repo",
+    ]);
+    expect(boundaries.find((boundary) => boundary.label === "Runtime Home")?.path).toBe(runtimeHome);
+    expect(boundaries.find((boundary) => boundary.label === "Project Workspace")?.path).toBe(root);
+    expect(formatRuntimeBoundaries(boundaries, root)).toContain("Write policy");
+    expect(formatRuntimeBoundaries(boundaries, root)).toContain("Target Code Repo");
+  });
+
   it("reports artifacts and readiness pass", () => {
     const root = makeRoot();
     ensureProjectInitialized(root);
@@ -52,13 +140,13 @@ describe("runtime surface helpers", () => {
     expect(readiness.implementationMayStart).toBe(true);
   });
 
-  it("selects phase 4 autopilot actions by sprint status", () => {
+  it("selects phase 4 automatic actions by sprint status", () => {
     const root = makeRoot();
     const cfg = loadPathConfig(root);
     const reviewDoc = parseSprintStatusText("development_status:\n  1-1-test: review\n");
-    expect(recommendPhase4Autopilot(reviewDoc, cfg).action).toBe("code-review");
+    expect(recommendPhase4Automation(reviewDoc, cfg).action).toBe("code-review");
     const backlogDoc = parseSprintStatusText("development_status:\n  1-1-test: backlog\n");
-    expect(recommendPhase4Autopilot(backlogDoc, cfg).action).toBe("create-story");
+    expect(recommendPhase4Automation(backlogDoc, cfg).action).toBe("create-story");
   });
 
   it("detects adapters and delegation mode", () => {
@@ -83,7 +171,7 @@ describe("runtime surface helpers", () => {
   });
 
 
-  it("builds autopilot execution plans and degraded parallel review evidence", async () => {
+  it("builds automatic execution plans and degraded parallel review evidence", async () => {
     const root = makeRoot();
     writeFile(root, ".pi/settings.json", JSON.stringify({ packages: [] }));
     writeFile(root, "_bmad-output/implementation-artifacts/1-1-test.md", `# Story 1.1
@@ -96,8 +184,8 @@ Status: review
 `);
     const cfg = loadPathConfig(root);
     const doc = parseSprintStatusText("development_status:\n  1-1-test: review\n");
-    const rec = recommendPhase4Autopilot(doc, cfg);
-    const plan = buildAutopilotExecutionPlan(rec);
+    const rec = recommendPhase4Automation(doc, cfg);
+    const plan = buildPhase4AutomationExecutionPlan(rec);
     expect(plan.prompt).toContain("Execute the loop");
     expect(plan.prompt).toContain("parallel code review");
     const review = await runParallelReviewDelegation({ cwd: root, storyKey: "1-1-test", storyPath: "_bmad-output/implementation-artifacts/1-1-test.md", changedPaths: [], acceptanceCriteria: ["Given X When Y Then Z"], evidenceLinks: [] });
@@ -182,18 +270,36 @@ Status: review
       state,
       catalogRows: [sprintStatusRow, helpRow],
       recommendation: { row: sprintStatusRow, blockedBy: [], optionalSamePhase: [], requiredIncomplete: [], completions: [] },
-      phase4Autopilot: { action: "complete", reason: "All non-retrospective sprint stories are done or no planned stories remain." },
+      phase4Automation: { action: "complete", reason: "All non-retrospective sprint stories are done or no planned stories remain." },
     });
     expect(content).toContain("Current BMAD position");
     expect(content).toContain("4-implementation");
     expect(content).toContain("/bmad init");
+    expect(content).toContain("--dedicated");
+    expect(content).toContain("--git-init");
+    expect(content).toContain("--confirm-generic-repo");
+    expect(content).toContain("/bmad rename <name>");
+    expect(content).toContain("--physical-folder");
     expect(content).toContain("/bmad start");
+    expect(content).toContain("/bmad projects");
+    expect(content).toContain("/bmad resume");
     expect(content).toContain("/bmad next");
-    expect(content).toContain("/bmad autopilot");
+    expect(content).not.toContain("/bmad autopilot");
+    expect(content).not.toContain("/bmad autonomous");
     expect(content).toContain("/bmad-help");
     expect(content).toContain("/bmad run SS");
-    expect(content).toContain("Phase 4 autopilot: **complete**");
+    expect(content).toContain("Phase 4 complete: set `/bmad phase 5-ready-for-use`");
     expect(commandHelp()).toContain("/bmad-help");
+    expect(commandHelp()).not.toContain("/bmad autopilot");
+    expect(commandHelp()).not.toContain("/bmad autonomous");
+    expect(commandHelp()).toContain("5-ready-for-use");
+    expect(commandHelp()).toContain("/bmad rename <name>");
+    expect(commandHelp()).toContain("/bmad projects");
+    expect(commandHelp()).toContain("/bmad resume");
+    expect(commandHelp()).toContain("--confirm-folder-rename");
+    expect(commandHelp()).toContain("--dedicated");
+    expect(commandHelp()).toContain("--no-git-init");
+    expect(commandHelp()).toContain("--confirm-generic-repo");
   });
 
   it("validates config and baseline", () => {

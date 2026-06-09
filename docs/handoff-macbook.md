@@ -14,7 +14,7 @@ Run these commands from the repository/project where the teammate wants to use B
 
 ```bash
 cd <project-repo>
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.1.1
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0
 pi
 ```
 
@@ -22,7 +22,7 @@ If the machine uses SSH GitHub authentication instead of HTTPS:
 
 ```bash
 cd <project-repo>
-pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.1.1
+pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.0
 pi
 ```
 
@@ -31,19 +31,18 @@ pi
 Inside the Pi session:
 
 ```text
-/bmad init
-/bmad start
+/bmad-start
 /bmad-help
 ```
 
 ## Daily commands
 
 ```text
+/bmad-start
 /bmad status
 /bmad next
 /bmad run next
-/bmad autopilot
 /bmad-help
 ```
 
-`/bmad init` initializes project-local runtime files. `/bmad start` activates the Pi+BMad orchestrator in that project.
+`/bmad-start` opens the conversational picker. From there, the agent asks whether to continue an existing BMAD project from runtime state/latest handoff or create a new dedicated project workspace. Use `/bmad init` only if `/bmad-start` reports missing local runtime state or an unsafe project resolution that needs explicit repair.

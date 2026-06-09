@@ -1,4 +1,4 @@
-import type { AutopilotRecommendation } from "./autopilot.js";
+import type { Phase4AutomationRecommendation } from "./phase4-automation.js";
 import type { BmadCatalogRow } from "./catalog.js";
 import type { Recommendation } from "./scanner.js";
 import type { RuntimeState } from "./state.js";
@@ -45,6 +45,7 @@ const PHASE_LABELS: Record<string, string> = {
   "2-planning": "Planning / PRD + UX",
   "3-solutioning": "Solutioning / architecture + epics + readiness",
   "4-implementation": "Implementation / sprint + story loop",
+  "5-ready-for-use": "Ready for use / release + monitoring",
   anytime: "Anytime helper",
 };
 
@@ -83,15 +84,25 @@ export interface RuntimeHelpInput {
   state: RuntimeState;
   recommendation: Recommendation;
   catalogRows: BmadCatalogRow[];
-  phase4Autopilot?: AutopilotRecommendation;
+  phase4Automation?: Phase4AutomationRecommendation;
 }
 
-export function formatRuntimeHelp({ state, recommendation, catalogRows, phase4Autopilot }: RuntimeHelpInput): string {
+export function formatRuntimeHelp({ state, recommendation, catalogRows, phase4Automation }: RuntimeHelpInput): string {
   const currentPhaseRows = uniqueRows(catalogRows.filter((row) => row.phase === state.phase));
   const anytimeRows = uniqueRows(catalogRows.filter((row) => row.phase === "anytime" && ["Core", "BMad Method"].includes(row.module))).slice(0, 10);
   const lastRun = state.workflowHistory.at(-1);
-  const nextLine = phase4Autopilot
-    ? `Phase 4 autopilot: **${phase4Autopilot.action}** — ${phase4Autopilot.reason}`
+  const readyForUseLine = state.phase === "5-ready-for-use"
+    ? "Ready for use: no Phase 4 story loop should continue unless a new version/story is explicitly started."
+    : undefined;
+  const phase4Line = phase4Automation?.action === "complete"
+    ? `Phase 4 complete: set \`/bmad phase 5-ready-for-use\` when release/install smoke and handoff are captured.`
+    : phase4Automation
+      ? `Phase 4 automatic next step: **${phase4Automation.action}** — ${phase4Automation.reason}`
+      : undefined;
+  const nextLine = readyForUseLine
+    ? readyForUseLine
+    : phase4Line
+    ? phase4Line
     : recommendation.row
       ? `Next recommended workflow: ${formatRow(recommendation.row)}`
       : "Next recommended workflow: ✅ none detected";
@@ -116,16 +127,22 @@ export function formatRuntimeHelp({ state, recommendation, catalogRows, phase4Au
     "## Core framework commands",
     "",
     "- `/bmad init` — initialize runtime state and artifact folders in this project",
+    "- `/bmad init --dedicated <project-name> [--root <path>] [--git-init|--no-git-init]` — create a dedicated local BMAD workspace",
+    "- `/bmad init --confirm-generic-repo` — explicitly initialize BMAD in the current generic git repo",
     "- `/bmad init --record-evidence` — initialize and write an evidence packet",
-    "- `/bmad start` — activate Pi+BMad and start the orchestrator interview",
+    "- `/bmad rename <name>` — rename project display name while preserving Stable ID and physical folder",
+    "- `/bmad rename --physical-folder <folder> --confirm-folder-rename` — preflight an explicit physical folder rename without moving it",
+    "- `/bmad-start` — start BMAD Runtime with a conversational project picker",
+    "- `/bmad start` — same as `/bmad-start`",
+    "- `/bmad projects` — list known projects read-only; use `details <number|name|projectId>` for details on demand",
+    "- `/bmad resume <id|name|alias>` — resume one registered project without relying on current cwd",
     "- `/bmad status` — show state, gates, artifacts, adapters, sprint status and recommendation",
     "- `/bmad next` — show the next BMAD recommendation",
     "- `/bmad run next` — launch the next recommended workflow",
     "- `/bmad run <code|skill>` — launch a workflow from the BMAD catalog, e.g. `/bmad run CP`",
-    "- `/bmad phase <phase>` — set phase: `1-analysis`, `2-planning`, `3-solutioning`, `4-implementation`",
-    "- `/bmad autonomous` — enable autonomous Phase 3/4 mode",
-    "- `/bmad autopilot` — execute the next autonomous story-loop action with checks and evidence",
+    "- `/bmad phase <phase>` — set phase: `1-analysis`, `2-planning`, `3-solutioning`, `4-implementation`, `5-ready-for-use`",
     "- `/bmad review <story>` — run Blind Hunter, Edge Case Hunter and Acceptance Auditor review roles",
+    "- `/bmad handoff [note]` — write a compact resume handoff for the next session",
     "- `/bmad health` — diagnose package/config/state/artifacts/adapters",
     "- `/bmad readiness` — show implementation readiness gate",
     "- `/bmad grill [target]` — run grill-with-docs pressure testing",
@@ -152,7 +169,7 @@ export function formatRuntimeHelp({ state, recommendation, catalogRows, phase4Au
     "",
     "```text",
     "/bmad init",
-    "/bmad start",
+    "/bmad-start",
     "/bmad-help",
     "```",
   ].join("\n");
@@ -162,22 +179,28 @@ export function commandHelp(): string {
   return `BMAD Runtime for Pi commands:
 
 /bmad init            Initialize local runtime state, project identity, baseline lock, and artifact folders
+/bmad init --dedicated <project-name> [--root <path>] [--git-init|--no-git-init]    Create a dedicated local BMAD workspace; optional git init is local-only
+/bmad init --confirm-generic-repo    Explicitly initialize BMAD in the current generic git repo
 /bmad init --record-evidence    Initialize and append a project evidence packet
+/bmad rename <name>   Rename project display name, preserve Stable ID, and keep physical folder unchanged
+/bmad rename --physical-folder <folder> --confirm-folder-rename   Preflight a folder rename; runtime does not move the folder
+/bmad projects        List known projects read-only; details: /bmad projects details <number|name|projectId>
+/bmad resume <id|name|alias>   Resume one registered project without relying on current cwd
 /bmad health          Diagnose package, BMAD config, state, artifacts, agents, and optional adapters
 /bmad health --record-evidence  Run health and append a project evidence packet
 /bmad readiness       Show implementation readiness gate card
 /bmad transition      Show accept/review/cancel confirmation for the next BMAD transition
-/bmad start           Activate runtime and start the orchestrator interview
+/bmad-start           Start BMAD Runtime with a conversational project picker
+/bmad start           Same as /bmad-start
 /bmad status          Show state, catalog detection, and next recommendation
 /bmad next            Show the next BMAD recommendation
 /bmad run <code>      Launch workflow by menu code or skill name, e.g. /bmad run CP
 /bmad run next        Launch the next recommended required workflow
 /bmad run --same-session <code>  Launch without fresh-session handoff
 /bmad run --fresh <code>         Launch in a fresh session without confirmation
-/bmad phase <phase>   Set phase: 1-analysis | 2-planning | 3-solutioning | 4-implementation
-/bmad autonomous      Switch to Phase 3/4 autonomous mode
-/bmad autopilot       Switch to autonomous mode and launch the next required workflow
+/bmad phase <phase>   Set phase: 1-analysis | 2-planning | 3-solutioning | 4-implementation | 5-ready-for-use
 /bmad review <story>  Run BMAD parallel review roles and write review evidence
+/bmad handoff [note]  Write a compact resume handoff for the next session
 /bmad interview       Switch to human-in-loop interview mode
 /bmad grill [target]  Run grill-with-docs against current plan or target
 /bmad exit            Deactivate runtime lock

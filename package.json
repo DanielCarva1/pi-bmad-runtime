@@ -1,6 +1,6 @@
 {
   "name": "pi-bmad-runtime",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "BMAD Runtime for Pi: stateful orchestration, gates, and workflow control for BMAD Method inside pi.",
   "type": "module",
   "license": "MIT",
@@ -24,13 +24,24 @@
     "skills/",
     "prompts/",
     "docs/",
+    "examples/",
+    "scripts/",
     "README.md",
     "AGENTS.md"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck && vitest run",
+    "test": "npm run typecheck && vitest run --testTimeout 30000",
+    "audit:objective": "node scripts/objective-readiness-audit.mjs",
+    "audit:objective:remote": "node scripts/objective-readiness-audit.mjs --check-remote --verify-git-install",
+    "audit:context": "node scripts/context-budget-audit.mjs",
+    "audit:release": "node scripts/release-audit.mjs",
+    "status:scope": "node scripts/release-scope.mjs",
+    "status:publication": "node scripts/publication-status.mjs",
+    "status:owner-release": "node scripts/owner-release-decision.mjs",
     "pack:dry-run": "npm pack --dry-run",
+    "smoke:pi-install": "node scripts/pi-install-smoke.mjs",
+    "smoke:git-install": "node scripts/git-install-smoke.mjs",
     "smoke": "npm test && npm run pack:dry-run"
   },
   "peerDependencies": {

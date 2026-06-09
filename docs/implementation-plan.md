@@ -18,7 +18,7 @@
 - [x] Fresh-session launch supports ask/always/never modes.
 - [x] `/bmad run <code>` supports workflow args.
 - [x] `/bmad run next` launches the recommendation engine target.
-- [x] `/bmad autopilot` switches to autonomous mode and launches next required workflow.
+- [x] `/bmad-start`/resume launches the next non-human-blocked workflow automatically.
 - [x] Runtime updates `currentWorkflow` from launched skill.
 - [x] Runtime records workflow launch history.
 - [ ] Runtime records workflow completion evidence.
@@ -41,7 +41,7 @@
 
 ## Milestone 5 — Autonomous Phase 3/4 Runner
 
-- [x] `/bmad autopilot` command.
+- [x] Automatic Phase 3/4 execution through `/bmad-start`/resume.
 - [x] Sprint status parser/validator.
 - [x] Basic sprint status transition gate.
 - [x] Sprint summary surfaced in `/bmad status`.

@@ -6,6 +6,17 @@ Pi supports packages containing extensions, skills, prompts, and themes. Extensi
 
 BMAD Method already provides skills and artifact conventions. The runtime should wrap those conventions rather than fork them.
 
+## 1.1 Core/Adapter Contract
+
+BMAD Runtime separates method semantics from host execution:
+
+- BMAD Core Semantics owns phase model, workflow state, artifacts, gates, evidence and registry.
+- Runtime/Agent Adapter owns command surface, tools, UI/prompts and agent execution.
+- Pi-native behavior remains the P0 adapter for v0.2.
+- External adapters are future feasibility, not full v0.2 support.
+
+The package-local contract is documented in `docs/adapter-contract.md` and represented in `extensions/bmad-runtime/adapter-contract.ts`.
+
 ## 2. High-Level Design
 
 ```text
@@ -75,6 +86,8 @@ Shape:
 ```
 
 The extension also writes `pi.appendEntry("bmad-runtime-state", state)` for session-local auditability, but file state is canonical across sessions.
+
+Phase values include `1-analysis`, `2-planning`, `3-solutioning`, `4-implementation`, `5-ready-for-use`, and `anytime`. Phase 5 keeps the runtime active while setting mode to `paused`, so support/release validation can continue without resuming Phase 4 story automation.
 
 ## 5. Catalog and Completion Detection
 

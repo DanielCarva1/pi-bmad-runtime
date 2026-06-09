@@ -10,6 +10,7 @@ The runtime separates product ambiguity from technical execution.
 | Phase 2 — Planning | High | Interview, grill, validate, document |
 | Phase 3 — Solutioning | Low | Create architecture, epics, readiness checks |
 | Phase 4 — Implementation | Low | Create stories, implement, review, test, iterate |
+| Phase 5 — Ready for use | On demand | Stop the story loop; support use, monitor, validate release/install, or open an explicit next version |
 
 ## Phase 1/2 Rules
 
@@ -49,6 +50,10 @@ Ask the user only for:
 5. contradictions between approved artifacts;
 6. new scope that cannot fit the approved PRD/architecture;
 7. dependency installation if the project does not already allow agent-managed dependencies.
+
+## Phase 5 Rules
+
+Phase 5 means the product is usable. The runtime must not continue Phase 4 story automation unless a new version, story, regression, incident, or support task is explicitly opened.
 
 ## Done Definition
 

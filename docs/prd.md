@@ -27,7 +27,8 @@ When BMAD is implemented only through prompts, the model can drift, forget the p
 5. Start Phase 1/2 as an interview-led facilitation process.
 6. Integrate `grill-with-docs` to challenge vague domain language and decisions.
 7. Shift Phase 3/4 into autonomous execution mode with strict BMAD gates.
-8. Make future subagent orchestration straightforward.
+8. Provide a Phase 5 ready-for-use state so completed products do not stay in the Phase 4 story loop.
+9. Make future subagent orchestration straightforward.
 
 ## 4. Non-Goals for MVP
 
@@ -51,16 +52,16 @@ When BMAD is implemented only through prompts, the model can drift, forget the p
 User runs:
 
 ```text
-/bmad start
+/bmad-start
 ```
 
 The runtime:
 
 1. creates or loads `.bmad-runtime/state.json`;
 2. scans for `_bmad/` and `_bmad-output/`;
-3. sets lock mode active;
-4. invokes the `bmad-runtime-for-pi` orchestrator skill;
-5. starts an interview to select a track.
+3. invokes the `bmad-runtime-for-pi` start router;
+4. asks whether to continue an existing BMAD project or create a new one;
+5. activates state only after the selected project path is clear.
 
 ### 6.2 Phase 1/2 Interactive Facilitation
 
@@ -76,27 +77,45 @@ The orchestrator:
 
 After planning artifacts pass readiness:
 
-1. user or runtime switches to autonomous mode;
+1. runtime enters autonomous mode from `/bmad-start`/resume;
 2. architecture, epics, sprint plan, stories, implementation, review, and QA run without routine user interruption;
 3. the runtime asks the user only for blockers declared in the autonomy contract.
+
+### 6.4 Phase 5 Ready for Use
+
+After Phase 4 completion and release/install evidence are captured, the runtime may move to `5-ready-for-use`.
+
+In this phase the project remains active, but Phase 4 story automation stops unless a new version, story, regression, incident, or support task is explicitly opened.
 
 ## 7. Acceptance Criteria
 
 ### AC1 — Local Pi Package
 
-Given a local repo containing this package, when a user runs `pi install <path>`, then Pi discovers the `/bmad` command and bundled skills.
+Given a local repo containing this package, when a user runs `pi install -l <path>`, then Pi discovers the `/bmad` command and bundled skills for that project.
 
 ### AC2 — Runtime State
 
-Given `/bmad start`, when the command runs, then `.bmad-runtime/state.json` is created with `active: true`, mode, phase, and timestamps.
+Given `/bmad-start` or `/bmad start`, when the command runs, then the Pi agent asks whether to continue an existing BMAD project or create a new one.
+
+Given the user chooses an existing uniquely resolved project, then `.bmad-runtime/state.json` is activated with mode, phase, and timestamps.
 
 ### AC3 — BMAD Catalog Detection
 
 Given a project with `_bmad/_config/bmad-help.csv`, when `/bmad status` runs, then the command reports installed BMAD rows, required incomplete workflows, and next recommendation.
 
-### AC4 — Orchestrator Interview
+### AC4 — Orchestrator Bootstrap
 
-Given `/bmad start`, when the runtime is activated, then the next agent turn receives the `bmad-runtime-for-pi` skill and begins track/goal discovery.
+Given the runtime is activated for an existing project, then the next agent turn receives the `bmad-runtime-for-pi` skill with a compact resume bootstrap based on project identity, runtime state, and the latest handoff if present.
+
+Given the user chooses a new project, then the dedicated workspace receives project-local `.pi/settings.json` pointing at this runtime package whenever the package root/spec is available.
+
+Given the runtime is active, when an agent loop ends or `/bmad handoff` is run, then `.bmad-runtime/handoffs/latest-handoff.md` is updated with a compact project anchor, next step, and resume rules.
+
+### AC4b — Artifact Lifecycle
+
+Given a consumer project has temporary task docs or agent work packets, then the runtime may allow cleanup only after the task outcome, changed files, checks, and next status are captured in sprint/status/evidence.
+
+Given an artifact is canonical engine/runtime state, PRD, architecture, epics, story, sprint status, evidence, registry, baseline, or handoff, then it is not treated as ephemeral unless an explicit approved cleanup or migration workflow owns that change.
 
 ### AC5 — Lock Context
 

@@ -19,7 +19,7 @@ export interface Recommendation {
   completions: CompletionEvidence[];
 }
 
-const PHASE_ORDER = ["1-analysis", "2-planning", "3-solutioning", "4-implementation", "anytime"];
+const PHASE_ORDER = ["1-analysis", "2-planning", "3-solutioning", "4-implementation", "5-ready-for-use", "anytime"];
 const IGNORE_DIRS = new Set([".git", "node_modules", ".pi", ".bmad-runtime"]);
 
 function walkFiles(dir: string, limit = 1200): string[] {

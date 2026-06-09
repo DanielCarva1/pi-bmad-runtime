@@ -19,7 +19,7 @@ As an orchestrator, I want runtime state outside chat so BMAD phase and mode sur
 
 Acceptance criteria:
 
-- Given `/bmad start`, when invoked, then `.bmad-runtime/state.json` is created.
+- Given `/bmad-start`, when the user chooses an existing project, then `.bmad-runtime/state.json` is activated for that project.
 - Given existing state, when `/bmad status` runs, then state is displayed.
 - Given `/bmad exit`, when invoked, then `active` becomes false.
 
@@ -38,12 +38,14 @@ Goal: make Phase 1/2 a strong interview system with explicit domain-language pre
 
 ### Story 2.1: Orchestrator skill
 
-As a user, I want `/bmad start` to activate a strict BMAD orchestrator that interviews me and recommends a track.
+As a user, I want `/bmad-start` to ask whether I want to continue an existing BMAD project or create a new dedicated project workspace.
 
 Acceptance criteria:
 
-- Given `/bmad start`, the orchestrator introduces BMAD Runtime and asks for project goal/track signals.
-- The orchestrator does not invent a Hermes persona.
+- Given `/bmad-start`, the Pi agent asks which existing project to continue or whether to create a new project.
+- Given the user chooses an existing project, the orchestrator resumes from runtime state and latest handoff before asking or acting.
+- Given the user chooses a new project, the runtime creates a dedicated workspace with project-local package settings when available.
+- The orchestrator does not invent fork-specific personas, routes, or adapter behavior.
 - The orchestrator distinguishes Quick Flow, BMad Method, Enterprise, and custom paths.
 
 ### Story 2.2: Grill-with-docs command
@@ -114,15 +116,35 @@ Acceptance criteria:
 - Unresolved review findings prevent done.
 - Missing file list/dev record prevents done.
 
-### Story 4.3: Autopilot loop
+### Story 4.3: Automatic start/resume loop
 
-As a user, I want `/bmad autopilot` to continue Phase 3/4 until completion or a true blocker.
+As a user, I want `/bmad-start` and resume to continue Phase 3/4 until completion or a true blocker.
 
 Acceptance criteria:
 
-- Runtime runs next required workflow.
+- Runtime runs the next required workflow after start/resume without another command.
 - Runtime continues create-story → dev-story → review loop.
 - Runtime stops only on autonomy-contract blockers or completion.
+
+### Story 4.4: Artifact lifecycle policy
+
+As a runtime, I want to distinguish canonical artifacts from ephemeral task docs so agents can keep projects clean without losing auditability.
+
+Acceptance criteria:
+
+- Engine/runtime artifacts, canonical planning artifacts, stories, sprint status, evidence, registry, runtime state, baseline, and handoffs are protected unless a workflow explicitly owns the change.
+- Consumer-project task docs or work packets may be deleted or archived after completion only when their result is reflected in sprint/status/evidence.
+- Status output and handoff guidance never treat chat memory as a substitute for persisted completion evidence.
+
+### Story 4.5: Ready-for-use phase
+
+As a runtime, I want completed projects to move into a ready-for-use state so Phase 4 automation does not continue forever.
+
+Acceptance criteria:
+
+- Given Phase 4 is complete, status/help can direct the user or agent to `/bmad phase 5-ready-for-use`.
+- Given state is `5-ready-for-use`, the runtime remains active but is not treated as autonomous implementation.
+- Given Phase 5 is active, Phase 4 story automation resumes only after an explicit new version, story, incident, regression, or support task.
 
 ## Epic 5: Subagent Orchestration
 
