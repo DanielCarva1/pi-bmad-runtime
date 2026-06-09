@@ -42,8 +42,9 @@ function runJson(label, args) {
 
 try {
   const publication = runJson("publication-status", ["scripts/publication-status.mjs", ...(checkRemote ? ["--check-remote"] : [])]);
-  const releaseComplete = publication.releaseComplete === true;
-  const objectiveArgs = releaseComplete && checkRemote
+  const publicationCompleteForSelectedChecks = publication.releaseComplete === true;
+  const remoteReleaseComplete = checkRemote && publicationCompleteForSelectedChecks;
+  const objectiveArgs = remoteReleaseComplete
     ? ["scripts/objective-readiness-audit.mjs", "--check-remote", "--verify-git-install"]
     : ["scripts/objective-readiness-audit.mjs"];
   const checks = [
@@ -59,11 +60,14 @@ try {
   const ownerGated = (objective?.ownerGatedCount ?? 0) > 0 && objective?.parsed?.completionProven === false;
   const missingLocalEvidence = (objective?.missingCount ?? 0) > 0;
   const unclassifiedPaths = scope?.unclassifiedCount ?? 0;
+  const releaseComplete = remoteReleaseComplete;
   const checksOk = checks.every((check) => check.ok);
-  const readyForOwnerDecision = checksOk && !missingLocalEvidence && unclassifiedPaths === 0 && ownerGated && !releaseComplete;
+  const readyForOwnerDecision = checksOk && !missingLocalEvidence && unclassifiedPaths === 0 && ownerGated && !publicationCompleteForSelectedChecks;
 
   const nextActions = releaseComplete
     ? ["Remote release/install proof is complete for the checked publication state."]
+    : publicationCompleteForSelectedChecks && !checkRemote
+      ? ["Local tag/worktree publication checks are complete. Rerun npm run status:owner-release -- --check-remote, npm run smoke:git-install, and npm run audit:objective:remote to prove the remote release."]
     : readyForOwnerDecision
       ? [
           "Owner may review docs/owner-release-runbook-v02.md and decide whether to publish v0.2.0.",
