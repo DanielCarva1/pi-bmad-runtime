@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(process.argv.find((arg) => arg.startsWith("--package-root="))?.slice("--package-root=".length) ?? path.join(scriptDir, ".."));
-const tag = process.argv.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length) ?? "v0.2.1";
+const tag = process.argv.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length) ?? "v0.2.2";
 const remote = process.argv.find((arg) => arg.startsWith("--remote="))?.slice("--remote=".length) ?? "origin";
 const checkRemote = process.argv.includes("--check-remote");
 const verifyGitInstall = process.argv.includes("--verify-git-install");
@@ -158,7 +158,7 @@ const requirements = [
     "R1",
     "A person can clone/install the package and get a usable Pi package.",
     all([
-      has("README.md", "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1"),
+      has("README.md", "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2"),
       has("README.md", "pi install -l ../pi-bmad-runtime"),
       has("docs/install-smoke.md", "pi install <package-root> -l"),
       has("package.json", "\"smoke:pi-install\": \"node scripts/pi-install-smoke.mjs\""),
@@ -169,7 +169,7 @@ const requirements = [
       exists("scripts/command-discovery-smoke.mjs"),
     ]) ? "proved-locally" : "missing-evidence",
     ["README.md", "docs/install-smoke.md", "package.json", "scripts/pi-install-smoke.mjs", "scripts/git-install-smoke.mjs", "scripts/command-discovery-smoke.mjs"],
-    "Remote Git install pin is valid only after the Owner creates and pushes tag v0.2.1.",
+    "Remote Git install pin is valid only after the Owner creates and pushes tag v0.2.2.",
   ),
   req(
     "R2",
@@ -260,12 +260,12 @@ const requirements = [
       has("package.json", "\"status:owner-release\": \"node scripts/owner-release-decision.mjs\""),
       exists("scripts/owner-release-decision.mjs"),
       has("docs/owner-release-decision.md", "readyForOwnerDecision"),
-      has("docs/owner-release-runbook-v02.md", "Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.1` to GitHub."),
+      has("docs/owner-release-runbook-v02.md", "Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.2` to GitHub."),
       has("docs/owner-release-runbook-v02.md", "git add <reviewed files>"),
       has("docs/owner-release-runbook-v02.md", "Do not use `git add .`."),
-      has("docs/owner-release-runbook-v02.md", "git push origin v0.2.1"),
+      has("docs/owner-release-runbook-v02.md", "git push origin v0.2.2"),
       has("docs/release-checklist-v02.md", "Only after Owner approval:"),
-      has("docs/release-checklist-v02.md", "git tag v0.2.1"),
+      has("docs/release-checklist-v02.md", "git tag v0.2.2"),
       has("docs/release-checklist-v02.md", "npm run status:scope"),
       has("docs/release-checklist-v02.md", "npm run status:publication -- --check-remote"),
       has("tests/release-audit.test.ts", "passes against the current package shape without external writes"),

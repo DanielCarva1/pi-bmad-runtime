@@ -1,6 +1,6 @@
 # Owner Release Decision
 
-Purpose: give a non-Git-expert Owner one read-only command that summarizes whether `pi-bmad-runtime v0.2.1` is locally ready for a release decision.
+Purpose: give a non-Git-expert Owner one read-only command that summarizes whether `pi-bmad-runtime v0.2.2` is locally ready for a release decision.
 
 Run from the package repository:
 

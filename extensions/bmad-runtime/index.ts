@@ -38,6 +38,7 @@ import { createDedicatedWorkspace, formatDedicatedWorkspaceResult } from "./work
 const VALID_PHASES: RuntimePhase[] = ["0-init", "1-analysis", "2-planning", "3-solutioning", "4-implementation", "5-ready-for-use", "anytime"];
 const START_ROUTER_TTL_MS = 15 * 60 * 1000;
 const CANONICAL_EXTENSION_COMMANDS = new Set(["bmad", "bmad-start", "bmad-help"]);
+const RUNTIME_REGISTRATION_KEY = Symbol.for("pi-bmad-runtime.extension-registered");
 
 interface PendingStartRouter {
   cwd: string;
@@ -74,6 +75,13 @@ function anotherBmadRuntimeAlreadyRegistered(pi: ExtensionAPI): boolean {
   } catch {
     return false;
   }
+}
+
+function claimBmadRuntimeRegistration(): boolean {
+  const registry = globalThis as typeof globalThis & Record<symbol, boolean | undefined>;
+  if (registry[RUNTIME_REGISTRATION_KEY]) return false;
+  registry[RUNTIME_REGISTRATION_KEY] = true;
+  return true;
 }
 
 function runtimePackageRoot(): string {
@@ -320,6 +328,7 @@ async function sendWorkflowInvocation(args: string, ctx: any, prompt: string, fr
 
 export default function bmadRuntimeExtension(pi: ExtensionAPI, options: BmadRuntimeExtensionOptions = {}): void {
   if (anotherBmadRuntimeAlreadyRegistered(pi)) return;
+  if (typeof pi.getCommands === "function" && !claimBmadRuntimeRegistration()) return;
 
   const registryOptions = options.registryOptions ?? {};
 

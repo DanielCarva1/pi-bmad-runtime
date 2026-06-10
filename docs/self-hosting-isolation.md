@@ -42,7 +42,7 @@ pi -e <path-to-pi-bmad-runtime>
 Released teammate install, only after the release tag exists remotely:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2
 pi
 ```
 

@@ -57,8 +57,8 @@ npm run smoke:git-install
 This proves the public install command in a temporary project:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2
 pi list
 ```
 
-Before the remote `v0.2.1` tag exists, the smoke exits with `reason: remote-tag-missing` and does not attempt installation.
+Before the remote `v0.2.2` tag exists, the smoke exits with `reason: remote-tag-missing` and does not attempt installation.

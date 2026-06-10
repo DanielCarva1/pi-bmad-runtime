@@ -70,9 +70,9 @@ try {
       ? ["Local tag/worktree publication checks are complete. Rerun npm run status:owner-release -- --check-remote, npm run smoke:git-install, npm run smoke:commands -- --git, and npm run audit:objective:remote to prove the remote release."]
     : readyForOwnerDecision
       ? [
-          "Owner may review docs/owner-release-runbook-v02.md and decide whether to publish v0.2.1.",
+          "Owner may review docs/owner-release-runbook-v02.md and decide whether to publish v0.2.2.",
           "If approved, stage only reviewed files; do not use git add .",
-          "After commit, create and push tag v0.2.1, then rerun npm run status:owner-release -- --check-remote, npm run smoke:git-install, npm run smoke:commands -- --git, and npm run audit:objective:remote.",
+          "After commit, create and push tag v0.2.2, then rerun npm run status:owner-release -- --check-remote, npm run smoke:git-install, npm run smoke:commands -- --git, and npm run audit:objective:remote.",
         ]
       : [
           "Do not publish yet.",

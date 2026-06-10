@@ -76,7 +76,7 @@ const internalProductLanguagePatterns = [
 
 try {
   const pkg = JSON.parse(read("package.json"));
-  record("package version is v0.2.1", pkg.version === "0.2.1", `version=${pkg.version}`);
+  record("package version is v0.2.2", pkg.version === "0.2.2", `version=${pkg.version}`);
   record("package name", pkg.name === "pi-bmad-runtime", `name=${pkg.name}`);
 
   for (const required of ["extensions/", "skills/", "prompts/", "docs/", "examples/", "scripts/", "README.md", "AGENTS.md"]) {
@@ -123,9 +123,9 @@ try {
   }
 
   requireText("README.md", [
-    "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1",
+    "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2",
     "pi install -l ../pi-bmad-runtime",
-    "pi install -l npm:pi-bmad-runtime@0.2.1",
+    "pi install -l npm:pi-bmad-runtime@0.2.2",
     "/bmad-start",
     "/bmad start",
     "Use `/bmad init` only as an explicit repair/reconcile command",
@@ -146,16 +146,16 @@ try {
     "npm run smoke:pi-install",
     "npm run smoke:git-install",
     "npm run smoke:commands",
-    "git tag v0.2.1",
-    "git push origin v0.2.1",
-    "git ls-remote --tags origin refs/tags/v0.2.1",
+    "git tag v0.2.2",
+    "git push origin v0.2.2",
+    "git ls-remote --tags origin refs/tags/v0.2.2",
     "npm run status:publication -- --check-remote",
     "npm run audit:objective:remote",
     "Do not publish to npm unless that is separately approved.",
   ]);
 
   requireText("docs/owner-release-runbook-v02.md", [
-    "Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.1` to GitHub.",
+    "Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.2` to GitHub.",
     "npm run audit:objective",
     "npm run audit:context",
     "npm run audit:release",
@@ -169,10 +169,10 @@ try {
     "npm run audit:objective:remote",
     "git add <reviewed files>",
     "Do not use `git add .`.",
-    "git tag v0.2.1",
-    "git push origin v0.2.1",
-    "git ls-remote --tags origin refs/tags/v0.2.1",
-    "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1",
+    "git tag v0.2.2",
+    "git push origin v0.2.2",
+    "git ls-remote --tags origin refs/tags/v0.2.2",
+    "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2",
     "Do not publish to npm unless that is separately approved.",
   ]);
 

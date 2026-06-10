@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(process.argv.find((arg) => arg.startsWith("--package-root="))?.slice("--package-root=".length) ?? path.join(scriptDir, ".."));
-const tag = process.argv.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length) ?? "v0.2.1";
+const tag = process.argv.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length) ?? "v0.2.2";
 const sourceArg = process.argv.find((arg) => arg.startsWith("--source="))?.slice("--source=".length);
 const source = sourceArg ?? (process.argv.includes("--git") ? `git:github.com/DanielCarva1/pi-bmad-runtime@${tag}` : packageRoot);
 const keepTemp = process.argv.includes("--keep");

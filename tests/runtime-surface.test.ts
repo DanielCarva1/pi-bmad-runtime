@@ -69,7 +69,7 @@ describe("runtime surface helpers", () => {
           source: "extension",
           sourceInfo: {
             path: path.join(process.cwd(), "extensions", "bmad-runtime", "index.ts"),
-            source: "git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1",
+            source: "git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2",
             scope: "project",
             origin: "package",
             baseDir: process.cwd(),
@@ -83,6 +83,32 @@ describe("runtime surface helpers", () => {
     } as any);
 
     expect(commands.size).toBe(0);
+  });
+
+  it("uses a process-level guard when duplicate runtime copies load before command discovery is populated", () => {
+    const key = Symbol.for("pi-bmad-runtime.extension-registered");
+    delete (globalThis as Record<symbol, boolean | undefined>)[key];
+    try {
+      const first = new Map<string, unknown>();
+      const second = new Map<string, unknown>();
+      const makeApi = (commands: Map<string, unknown>) => ({
+        getCommands() {
+          return [];
+        },
+        registerCommand(name: string, spec: unknown) {
+          commands.set(name, spec);
+        },
+        on() { /* noop */ },
+      });
+
+      bmadRuntimeExtension(makeApi(first) as any);
+      bmadRuntimeExtension(makeApi(second) as any);
+
+      expect(first.has("bmad-start")).toBe(true);
+      expect(second.size).toBe(0);
+    } finally {
+      delete (globalThis as Record<symbol, boolean | undefined>)[key];
+    }
   });
 
   it("launches Phase 4 workflow fresh without mechanical confirmation", async () => {

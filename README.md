@@ -36,7 +36,7 @@ Pi supports npm, git and local-path packages. Project-local installs use `-l` so
 Use a pinned release tag when installing from GitHub:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2
 ```
 
 If the repository is private, make sure the teammate has collaborator/member access first.
@@ -60,7 +60,7 @@ pi -e ../pi-bmad-runtime
 Use a pinned ref when installing from git:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2
 ```
 
 During private development, use the appropriate HTTPS or SSH repository URL and pin a tag or commit. Pi will clone to `.pi/git/` for project-local installs.
@@ -70,7 +70,7 @@ During private development, use the appropriate HTTPS or SSH repository URL and 
 This package is prepared for npm-style packaging, but this story does **not** publish it. Once published, install with:
 
 ```bash
-pi install -l npm:pi-bmad-runtime@0.2.1
+pi install -l npm:pi-bmad-runtime@0.2.2
 ```
 
 Until publication, validate the package shape locally:
@@ -114,7 +114,7 @@ Before starting, pick the workspace intentionally. The Runtime Package, Runtime 
 ### New dedicated project workspace
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2
 pi
 # inside Pi
 /bmad-start
@@ -180,7 +180,7 @@ Send a teammate the repository URL and tell them to install it as a project-loca
 
 ```bash
 cd <their-project>
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2
 pi
 ```
 
@@ -196,7 +196,7 @@ If `/bmad-start` is treated as normal chat text, run `pi list` from the same fol
 For private repositories, the teammate must have GitHub access first. If their machine uses SSH-only GitHub access, they can install with:
 
 ```bash
-pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.2
 ```
 
 ## Validate package shape
@@ -216,7 +216,7 @@ npm run smoke
 npm pack --dry-run
 ```
 
-After the v0.2.1 tag is pushed, run:
+After the v0.2.2 tag is pushed, run:
 
 ```bash
 npm run audit:objective:remote

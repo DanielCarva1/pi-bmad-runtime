@@ -21,10 +21,10 @@ describe("v0.2 release checklist", () => {
     expect(checklist).toContain("npm run smoke:commands -- --git");
     expect(checklist).toContain("npm run audit:objective:remote");
     expect(checklist).toContain("node scripts/pi-install-smoke.mjs");
-    expect(checklist).toContain("git tag v0.2.1");
-    expect(checklist).toContain("git push origin v0.2.1");
-    expect(checklist).toContain("git ls-remote --tags origin refs/tags/v0.2.1");
-    expect(checklist).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1");
+    expect(checklist).toContain("git tag v0.2.2");
+    expect(checklist).toContain("git push origin v0.2.2");
+    expect(checklist).toContain("git ls-remote --tags origin refs/tags/v0.2.2");
+    expect(checklist).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2");
     expect(checklist).toContain("remote-tag-missing");
     expect(checklist).toContain("Do not publish to npm unless that is separately approved.");
     expect(checklist).not.toMatch(/autopilot/i);

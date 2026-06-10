@@ -29,7 +29,7 @@ describe("Pi install smoke script", () => {
     expect(doc).toContain("npm run smoke:git-install");
     expect(doc).toContain("npm run smoke:commands");
     expect(doc).toContain("pi install <package-root> -l");
-    expect(doc).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1");
+    expect(doc).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2");
     expect(doc).toContain("pi list");
     expect(doc).toContain("bmad-command-discovery-failed");
     expect(doc).toContain("reason: remote-tag-missing");
@@ -55,7 +55,7 @@ describe("Pi install smoke script", () => {
     };
     expect(output.ok).toBe(true);
     expect(output.dryRun).toBe(true);
-    expect(output.source).toBe("git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1");
+    expect(output.source).toBe("git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2");
     expect(output.installAttempted).toBe(false);
     expect(output.externalWrites).toBe(false);
   });

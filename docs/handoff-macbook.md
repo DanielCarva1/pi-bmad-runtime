@@ -14,7 +14,7 @@ Run these commands from the repository/project where the teammate wants to use B
 
 ```bash
 cd <project-repo>
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.2
 pi
 ```
 
@@ -22,7 +22,7 @@ If the machine uses SSH GitHub authentication instead of HTTPS:
 
 ```bash
 cd <project-repo>
-pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.1
+pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.2
 pi
 ```
 
