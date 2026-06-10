@@ -22,6 +22,24 @@ The smoke:
 
 It does not publish, push, tag, deploy, or modify real project workspaces.
 
+## Command Discovery Smoke
+
+Run this after install smoke and before handing the package to another machine:
+
+```bash
+npm run smoke:commands
+```
+
+This starts Pi in RPC offline mode inside a temporary project and verifies the canonical commands are discoverable exactly as:
+
+```text
+/bmad
+/bmad-start
+/bmad-help
+```
+
+It fails with `bmad-command-discovery-failed` if Pi reports suffixed duplicate names such as `/bmad-start:1`. That usually means the runtime is installed twice, for example once in user settings and once in project settings. Keep only one `pi-bmad-runtime` entry in `pi list`, then restart Pi.
+
 Use `-- --keep` to keep the temporary workspace for inspection:
 
 ```bash
@@ -39,8 +57,8 @@ npm run smoke:git-install
 This proves the public install command in a temporary project:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
 pi list
 ```
 
-Before the remote `v0.2.0` tag exists, the smoke exits with `reason: remote-tag-missing` and does not attempt installation.
+Before the remote `v0.2.1` tag exists, the smoke exits with `reason: remote-tag-missing` and does not attempt installation.

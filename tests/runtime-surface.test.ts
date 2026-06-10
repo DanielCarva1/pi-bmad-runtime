@@ -60,6 +60,31 @@ describe("runtime surface helpers", () => {
     expect(completions).not.toContain("autopilot");
   });
 
+  it("skips duplicate command registration when another runtime copy already loaded", () => {
+    const commands = new Map<string, unknown>();
+    bmadRuntimeExtension({
+      getCommands() {
+        return [{
+          name: "bmad-start",
+          source: "extension",
+          sourceInfo: {
+            path: path.join(process.cwd(), "extensions", "bmad-runtime", "index.ts"),
+            source: "git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1",
+            scope: "project",
+            origin: "package",
+            baseDir: process.cwd(),
+          },
+        }];
+      },
+      registerCommand(name: string, spec: unknown) {
+        commands.set(name, spec);
+      },
+      on() { /* noop */ },
+    } as any);
+
+    expect(commands.size).toBe(0);
+  });
+
   it("launches Phase 4 workflow fresh without mechanical confirmation", async () => {
     const root = makeRoot();
     saveState(root, { ...createDefaultState(), active: true, mode: "autonomous", phase: "4-implementation", track: "bmad-method", currentStory: "5.2" });

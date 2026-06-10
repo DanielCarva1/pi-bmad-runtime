@@ -42,11 +42,13 @@ pi -e <path-to-pi-bmad-runtime>
 Released teammate install, only after the release tag exists remotely:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
 pi
 ```
 
 The install command is run in the project that should receive BMAD Runtime. It should not be run inside `pi-bmad-runtime/` unless the package repository is intentionally being used as the active Project Workspace for runtime development.
+
+For one Pi session, load the runtime once. If `pi list` shows both a user package and a project package for `pi-bmad-runtime`, Pi may suffix command names such as `/bmad-start:1`; remove the duplicate install or use a clean session, then restart Pi.
 
 ## Start and Resume
 

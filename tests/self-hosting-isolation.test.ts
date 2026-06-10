@@ -23,7 +23,9 @@ describe("self-hosting and workspace isolation contract", () => {
     expect(doc).toContain("pi-bmad-builder");
     expect(doc).toContain("pi install -l <path-to-pi-bmad-runtime>");
     expect(doc).toContain("pi -e <path-to-pi-bmad-runtime>");
-    expect(doc).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0");
+    expect(doc).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1");
+    expect(doc).toContain("For one Pi session, load the runtime once.");
+    expect(doc).toContain("/bmad-start:1");
     expect(doc).toContain("/bmad-start");
     expect(doc).toContain("/bmad start");
     expect(doc).toContain("/bmad status");

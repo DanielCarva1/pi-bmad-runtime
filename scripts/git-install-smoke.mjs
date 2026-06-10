@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(process.argv.find((arg) => arg.startsWith("--package-root="))?.slice("--package-root=".length) ?? path.join(scriptDir, ".."));
-const tag = process.argv.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length) ?? "v0.2.0";
+const tag = process.argv.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length) ?? "v0.2.1";
 const remote = process.argv.find((arg) => arg.startsWith("--remote="))?.slice("--remote=".length) ?? "origin";
 const source = process.argv.find((arg) => arg.startsWith("--source="))?.slice("--source=".length) ?? `git:github.com/DanielCarva1/pi-bmad-runtime@${tag}`;
 const keepTemp = process.argv.includes("--keep");
@@ -73,7 +73,7 @@ try {
       tag,
       remote,
       installAttempted: false,
-      nextAction: `After Owner approval, commit/tag/push ${tag}, then rerun npm run smoke:git-install.`,
+      nextAction: `After Owner approval, commit/tag/push ${tag}, then rerun npm run smoke:git-install and npm run smoke:commands -- --git.`,
       externalWrites: false,
     }, null, 2));
     process.exitCode = 1;

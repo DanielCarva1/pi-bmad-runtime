@@ -56,6 +56,7 @@ describe("Owner release decision status", () => {
     expect(output.blockedActionsWithoutOwnerApproval).toContain("git push");
     expect(output.blockedActionsWithoutOwnerApproval).toContain("npm publish");
     expect(JSON.stringify(output)).toContain("smoke:git-install");
+    expect(JSON.stringify(output)).toContain("smoke:commands -- --git");
     expect(JSON.stringify(output)).toContain("audit:objective:remote");
     expect(output.nextActions.join(" ")).toMatch(/Owner may review|Rerun npm run status:owner-release|Remote release\/install proof/);
   });

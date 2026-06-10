@@ -19,10 +19,12 @@ describe("objective readiness audit", () => {
     expect(pkg.scripts["audit:context"]).toBe("node scripts/context-budget-audit.mjs");
     expect(pkg.scripts["status:owner-release"]).toBe("node scripts/owner-release-decision.mjs");
     expect(pkg.scripts["smoke:git-install"]).toBe("node scripts/git-install-smoke.mjs");
+    expect(pkg.scripts["smoke:commands"]).toBe("node scripts/command-discovery-smoke.mjs");
     expect(fs.existsSync(path.join(process.cwd(), "scripts", "objective-readiness-audit.mjs"))).toBe(true);
     expect(fs.existsSync(path.join(process.cwd(), "scripts", "context-budget-audit.mjs"))).toBe(true);
     expect(fs.existsSync(path.join(process.cwd(), "scripts", "owner-release-decision.mjs"))).toBe(true);
     expect(fs.existsSync(path.join(process.cwd(), "scripts", "git-install-smoke.mjs"))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), "scripts", "command-discovery-smoke.mjs"))).toBe(true);
     expect(readme).toContain("npm run audit:objective");
     expect(readme).toContain("npm run audit:objective:remote");
     expect(readme).toContain("npm run audit:context");
@@ -32,6 +34,7 @@ describe("objective readiness audit", () => {
     expect(checklist).toContain("npm run audit:context");
     expect(checklist).toContain("npm run status:owner-release");
     expect(checklist).toContain("npm run smoke:git-install");
+    expect(checklist).toContain("npm run smoke:commands -- --git");
     expect(checklist).toContain("objective audit has no missing local evidence");
   });
 
@@ -59,8 +62,8 @@ describe("objective readiness audit", () => {
       expect.objectContaining({
         id: "R11",
         status: "owner-release-gated",
-        requirement: expect.stringContaining("runs Git install smoke"),
-        evidence: expect.arrayContaining(["scripts/git-install-smoke.mjs"]),
+        requirement: expect.stringContaining("discovers canonical slash commands"),
+        evidence: expect.arrayContaining(["scripts/git-install-smoke.mjs", "scripts/command-discovery-smoke.mjs"]),
       }),
     ]);
   });

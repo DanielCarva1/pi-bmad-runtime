@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(process.argv.find((arg) => arg.startsWith("--package-root="))?.slice("--package-root=".length) ?? path.join(scriptDir, ".."));
-const tag = process.argv.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length) ?? "v0.2.0";
+const tag = process.argv.find((arg) => arg.startsWith("--tag="))?.slice("--tag=".length) ?? "v0.2.1";
 const remote = process.argv.find((arg) => arg.startsWith("--remote="))?.slice("--remote=".length) ?? "origin";
 const checkRemote = process.argv.includes("--check-remote");
 const verifyGitInstall = process.argv.includes("--verify-git-install");
@@ -83,6 +83,27 @@ function gitInstallProof() {
   };
 }
 
+function commandDiscoveryProof() {
+  if (!verifyGitInstall) return { checked: false, ok: false, reason: "not-requested" };
+  const result = spawnSync("node", ["scripts/command-discovery-smoke.mjs", "--git", `--tag=${tag}`], {
+    cwd: packageRoot,
+    encoding: "utf8",
+    shell: process.platform === "win32",
+  });
+  let parsed = {};
+  try {
+    parsed = JSON.parse(result.stdout || result.stderr || "{}");
+  } catch {
+    parsed = { raw: [result.stdout, result.stderr].filter(Boolean).join("\n").trim() };
+  }
+  return {
+    checked: true,
+    ok: (result.status ?? 1) === 0,
+    status: result.status ?? 1,
+    result: parsed,
+  };
+}
+
 function req(id, requirement, status, evidence, notes = "") {
   return { id, requirement, status, evidence, notes };
 }
@@ -130,22 +151,25 @@ function forbiddenAbsent() {
 const noForbidden = forbiddenAbsent();
 const releaseProof = publicationProof();
 const installProof = gitInstallProof();
-const remoteReleaseComplete = releaseProof.worktreeClean && releaseProof.localTagExists && releaseProof.remoteChecked && releaseProof.remoteTagExists && installProof.checked && installProof.ok;
+const commandProof = commandDiscoveryProof();
+const remoteReleaseComplete = releaseProof.worktreeClean && releaseProof.localTagExists && releaseProof.remoteChecked && releaseProof.remoteTagExists && installProof.checked && installProof.ok && commandProof.checked && commandProof.ok;
 const requirements = [
   req(
     "R1",
     "A person can clone/install the package and get a usable Pi package.",
     all([
-      has("README.md", "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0"),
+      has("README.md", "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1"),
       has("README.md", "pi install -l ../pi-bmad-runtime"),
       has("docs/install-smoke.md", "pi install <package-root> -l"),
       has("package.json", "\"smoke:pi-install\": \"node scripts/pi-install-smoke.mjs\""),
       has("package.json", "\"smoke:git-install\": \"node scripts/git-install-smoke.mjs\""),
+      has("package.json", "\"smoke:commands\": \"node scripts/command-discovery-smoke.mjs\""),
       exists("scripts/pi-install-smoke.mjs"),
       exists("scripts/git-install-smoke.mjs"),
+      exists("scripts/command-discovery-smoke.mjs"),
     ]) ? "proved-locally" : "missing-evidence",
-    ["README.md", "docs/install-smoke.md", "package.json", "scripts/pi-install-smoke.mjs", "scripts/git-install-smoke.mjs"],
-    "Remote Git install pin is valid only after the Owner creates and pushes tag v0.2.0.",
+    ["README.md", "docs/install-smoke.md", "package.json", "scripts/pi-install-smoke.mjs", "scripts/git-install-smoke.mjs", "scripts/command-discovery-smoke.mjs"],
+    "Remote Git install pin is valid only after the Owner creates and pushes tag v0.2.1.",
   ),
   req(
     "R2",
@@ -236,12 +260,12 @@ const requirements = [
       has("package.json", "\"status:owner-release\": \"node scripts/owner-release-decision.mjs\""),
       exists("scripts/owner-release-decision.mjs"),
       has("docs/owner-release-decision.md", "readyForOwnerDecision"),
-      has("docs/owner-release-runbook-v02.md", "Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.0` to GitHub."),
+      has("docs/owner-release-runbook-v02.md", "Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.1` to GitHub."),
       has("docs/owner-release-runbook-v02.md", "git add <reviewed files>"),
       has("docs/owner-release-runbook-v02.md", "Do not use `git add .`."),
-      has("docs/owner-release-runbook-v02.md", "git push origin v0.2.0"),
+      has("docs/owner-release-runbook-v02.md", "git push origin v0.2.1"),
       has("docs/release-checklist-v02.md", "Only after Owner approval:"),
-      has("docs/release-checklist-v02.md", "git tag v0.2.0"),
+      has("docs/release-checklist-v02.md", "git tag v0.2.1"),
       has("docs/release-checklist-v02.md", "npm run status:scope"),
       has("docs/release-checklist-v02.md", "npm run status:publication -- --check-remote"),
       has("tests/release-audit.test.ts", "passes against the current package shape without external writes"),
@@ -266,12 +290,12 @@ const requirements = [
   ),
   req(
     "R11",
-    "Remote release/install completion is proven after Owner creates commit/tag/push, verifies the remote tag, and runs Git install smoke.",
+    "Remote release/install completion is proven after Owner creates commit/tag/push, verifies the remote tag, runs Git install smoke, and discovers canonical slash commands.",
     remoteReleaseComplete ? "proved-remotely" : "owner-release-gated",
-    ["scripts/publication-status.mjs", "scripts/git-install-smoke.mjs", "docs/release-checklist-v02.md", "docs/owner-release-runbook-v02.md"],
+    ["scripts/publication-status.mjs", "scripts/git-install-smoke.mjs", "scripts/command-discovery-smoke.mjs", "docs/release-checklist-v02.md", "docs/owner-release-runbook-v02.md"],
     remoteReleaseComplete
-      ? `Remote tag ${tag} is present, worktree is clean, and Git install smoke passed.`
-      : `Remote proof pending. worktreeClean=${releaseProof.worktreeClean}; localTagExists=${releaseProof.localTagExists}; remoteChecked=${releaseProof.remoteChecked}; remoteTagExists=${releaseProof.remoteTagExists}; gitInstallSmokeChecked=${installProof.checked}; gitInstallSmokeOk=${installProof.ok}. This audit never creates commits, tags, pushes, GitHub releases or npm publications.`,
+      ? `Remote tag ${tag} is present, worktree is clean, Git install smoke passed, and command discovery smoke passed.`
+      : `Remote proof pending. worktreeClean=${releaseProof.worktreeClean}; localTagExists=${releaseProof.localTagExists}; remoteChecked=${releaseProof.remoteChecked}; remoteTagExists=${releaseProof.remoteTagExists}; gitInstallSmokeChecked=${installProof.checked}; gitInstallSmokeOk=${installProof.ok}; commandDiscoveryChecked=${commandProof.checked}; commandDiscoveryOk=${commandProof.ok}. This audit never creates commits, tags, pushes, GitHub releases or npm publications.`,
   ),
 ];
 
@@ -284,6 +308,7 @@ const result = {
   packageRoot,
   releaseProof,
   gitInstallProof: installProof,
+  commandDiscoveryProof: commandProof,
   requirements,
   missing,
   ownerGated,

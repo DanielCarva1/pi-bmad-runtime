@@ -13,35 +13,35 @@ Early local package. This repository contains Pi-native BMAD Runtime package res
 
 Package-owned resources shipped with this package:
 
-- `extensions/bmad-runtime/index.ts` — Pi extension entrypoint for `/bmad` commands, runtime context injection, and gates.
-- `extensions/bmad-runtime/*.ts` — runtime state, catalog scanning, recommendation, sprint/story validators, paths, gates, and UI formatting.
-- `skills/bmad-runtime-for-pi/` — orchestrator skill.
-- `skills/grill-with-docs/` — bundled planning pressure-test skill.
-- `prompts/` — prompt templates for common BMAD runtime actions.
-- `docs/` — package design, PRD, architecture, epics, implementation plan, and autonomy contract.
+- `extensions/bmad-runtime/index.ts` - Pi extension entrypoint for `/bmad` commands, runtime context injection, and gates.
+- `extensions/bmad-runtime/*.ts` - runtime state, catalog scanning, recommendation, sprint/story validators, paths, gates, and UI formatting.
+- `skills/bmad-runtime-for-pi/` - orchestrator skill.
+- `skills/grill-with-docs/` - bundled planning pressure-test skill.
+- `prompts/` - prompt templates for common BMAD runtime actions.
+- `docs/` - package design, PRD, architecture, epics, implementation plan, and autonomy contract.
 
 Generated host-project artifacts are **not** package resources. They live in the project where the package is installed, for example:
 
-- `.bmad-runtime/` — project-local runtime state, identity, baseline and recovery data.
-- `_bmad/` — installed BMAD configuration/catalog files.
-- `_bmad-output/` — project artifacts, ledgers, evidence, stories, sprint status and decisions.
-- `.pi/settings.json` — project-local Pi package settings when installed with `pi install -l`.
+- `.bmad-runtime/` - project-local runtime state, identity, baseline and recovery data.
+- `_bmad/` - installed BMAD configuration/catalog files.
+- `_bmad-output/` - project artifacts, ledgers, evidence, stories, sprint status and decisions.
+- `.pi/settings.json` - project-local Pi package settings when installed with `pi install -l`.
 
 ## Install
 
 Pi supports npm, git and local-path packages. Project-local installs use `-l` so the package is written to the current project `.pi/settings.json` instead of user settings.
 
-### Git install — recommended for teammates
+### Git install - recommended for teammates
 
 Use a pinned release tag when installing from GitHub:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
 ```
 
 If the repository is private, make sure the teammate has collaborator/member access first.
 
-### Local path install — only after cloning this package repo
+### Local path install - only after cloning this package repo
 
 Use this only if `pi-bmad-runtime` has already been cloned next to the target project:
 
@@ -60,7 +60,7 @@ pi -e ../pi-bmad-runtime
 Use a pinned ref when installing from git:
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
 ```
 
 During private development, use the appropriate HTTPS or SSH repository URL and pin a tag or commit. Pi will clone to `.pi/git/` for project-local installs.
@@ -70,7 +70,7 @@ During private development, use the appropriate HTTPS or SSH repository URL and 
 This package is prepared for npm-style packaging, but this story does **not** publish it. Once published, install with:
 
 ```bash
-pi install -l npm:pi-bmad-runtime@0.2.0
+pi install -l npm:pi-bmad-runtime@0.2.1
 ```
 
 Until publication, validate the package shape locally:
@@ -114,7 +114,7 @@ Before starting, pick the workspace intentionally. The Runtime Package, Runtime 
 ### New dedicated project workspace
 
 ```bash
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
 pi
 # inside Pi
 /bmad-start
@@ -180,7 +180,7 @@ Send a teammate the repository URL and tell them to install it as a project-loca
 
 ```bash
 cd <their-project>
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
 pi
 ```
 
@@ -191,10 +191,12 @@ Then, inside Pi:
 /bmad-help
 ```
 
+If `/bmad-start` is treated as normal chat text, run `pi list` from the same folder. Keep only one `pi-bmad-runtime` package source visible for that session, then restart Pi. Duplicate user-level and project-level installs make Pi expose suffixed commands such as `/bmad-start:1` instead of the canonical `/bmad-start`.
+
 For private repositories, the teammate must have GitHub access first. If their machine uses SSH-only GitHub access, they can install with:
 
 ```bash
-pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.1
 ```
 
 ## Validate package shape
@@ -214,7 +216,7 @@ npm run smoke
 npm pack --dry-run
 ```
 
-After the v0.2.0 tag is pushed, run:
+After the v0.2.1 tag is pushed, run:
 
 ```bash
 npm run audit:objective:remote

@@ -14,10 +14,12 @@ describe("Pi install smoke script", () => {
     expect(pkg.files).toContain("scripts/");
     expect(pkg.scripts["smoke:pi-install"]).toBe("node scripts/pi-install-smoke.mjs");
     expect(pkg.scripts["smoke:git-install"]).toBe("node scripts/git-install-smoke.mjs");
+    expect(pkg.scripts["smoke:commands"]).toBe("node scripts/command-discovery-smoke.mjs");
     expect(pkg.scripts.smoke).not.toContain("smoke:pi-install");
     expect(pkg.scripts.smoke).not.toContain("smoke:git-install");
     expect(fs.existsSync(path.join(process.cwd(), "scripts", "pi-install-smoke.mjs"))).toBe(true);
     expect(fs.existsSync(path.join(process.cwd(), "scripts", "git-install-smoke.mjs"))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), "scripts", "command-discovery-smoke.mjs"))).toBe(true);
   });
 
   it("documents the install smokes and their no-publication boundary", () => {
@@ -25,9 +27,11 @@ describe("Pi install smoke script", () => {
 
     expect(doc).toContain("npm run smoke:pi-install");
     expect(doc).toContain("npm run smoke:git-install");
+    expect(doc).toContain("npm run smoke:commands");
     expect(doc).toContain("pi install <package-root> -l");
-    expect(doc).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0");
+    expect(doc).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1");
     expect(doc).toContain("pi list");
+    expect(doc).toContain("bmad-command-discovery-failed");
     expect(doc).toContain("reason: remote-tag-missing");
     expect(doc).toContain("does not publish, push, tag, deploy");
     expect(doc).not.toMatch(/autopilot/i);
@@ -51,8 +55,29 @@ describe("Pi install smoke script", () => {
     };
     expect(output.ok).toBe(true);
     expect(output.dryRun).toBe(true);
-    expect(output.source).toBe("git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0");
+    expect(output.source).toBe("git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1");
     expect(output.installAttempted).toBe(false);
+    expect(output.externalWrites).toBe(false);
+  });
+
+  it("can dry-run the command discovery smoke without starting Pi RPC", () => {
+    const result = spawnSync("node", ["scripts/command-discovery-smoke.mjs", "--dry-run"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      shell: process.platform === "win32",
+    });
+
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
+    const output = JSON.parse(result.stdout) as {
+      ok: boolean;
+      dryRun: boolean;
+      requiredCommands: string[];
+      externalWrites: boolean;
+    };
+    expect(output.ok).toBe(true);
+    expect(output.dryRun).toBe(true);
+    expect(output.requiredCommands).toEqual(["bmad", "bmad-start", "bmad-help"]);
     expect(output.externalWrites).toBe(false);
   });
 });

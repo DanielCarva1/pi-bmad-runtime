@@ -15,7 +15,7 @@ describe("Owner release runbook v0.2", () => {
 
     expect(pkg.files).toContain("docs/");
     expect(checklist).toContain("docs/owner-release-runbook-v02.md");
-    expect(runbook).toContain("Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.0` to GitHub.");
+    expect(runbook).toContain("Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.1` to GitHub.");
     expect(runbook).toContain("npm run audit:objective");
     expect(runbook).toContain("npm run audit:release");
     expect(runbook).toContain("npm run status:scope");
@@ -24,14 +24,16 @@ describe("Owner release runbook v0.2", () => {
     expect(runbook).toContain("npm run status:publication -- --check-remote");
     expect(runbook).toContain("npm run status:owner-release -- --check-remote");
     expect(runbook).toContain("npm run smoke:git-install");
+    expect(runbook).toContain("npm run smoke:commands");
+    expect(runbook).toContain("npm run smoke:commands -- --git");
     expect(runbook).toContain("npm run audit:objective:remote");
     expect(runbook).toContain("git add <reviewed files>");
     expect(runbook).toContain("Do not use `git add .`.");
-    expect(runbook).toContain("git tag v0.2.0");
-    expect(runbook).toContain("git push origin v0.2.0");
-    expect(runbook).toContain("git ls-remote --tags origin refs/tags/v0.2.0");
-    expect(runbook).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0");
-    expect(runbook).toContain("not fully objective-proven until `npm run smoke:git-install` and `npm run audit:objective:remote` pass");
+    expect(runbook).toContain("git tag v0.2.1");
+    expect(runbook).toContain("git push origin v0.2.1");
+    expect(runbook).toContain("git ls-remote --tags origin refs/tags/v0.2.1");
+    expect(runbook).toContain("pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1");
+    expect(runbook).toContain("not fully objective-proven until `npm run smoke:git-install`, `npm run smoke:commands -- --git`, and `npm run audit:objective:remote` pass");
     expect(runbook).toContain("Do not publish to npm unless that is separately approved.");
     expect(runbook).not.toMatch(/auto\s*pilot/i);
     expect(runbook).not.toMatch(/Hermes|ZICO/);
@@ -68,5 +70,6 @@ describe("Owner release runbook v0.2", () => {
     expect(objectiveOutput.requirements.find((item) => item.id === "R9")?.evidence).toContain("scripts/owner-release-decision.mjs");
     expect(objectiveOutput.requirements.find((item) => item.id === "R11")?.evidence).toContain("docs/owner-release-runbook-v02.md");
     expect(objectiveOutput.requirements.find((item) => item.id === "R11")?.evidence).toContain("scripts/git-install-smoke.mjs");
+    expect(objectiveOutput.requirements.find((item) => item.id === "R11")?.evidence).toContain("scripts/command-discovery-smoke.mjs");
   });
 });

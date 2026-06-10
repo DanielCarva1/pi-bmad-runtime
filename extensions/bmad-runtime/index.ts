@@ -37,6 +37,7 @@ import { createDedicatedWorkspace, formatDedicatedWorkspaceResult } from "./work
 
 const VALID_PHASES: RuntimePhase[] = ["0-init", "1-analysis", "2-planning", "3-solutioning", "4-implementation", "5-ready-for-use", "anytime"];
 const START_ROUTER_TTL_MS = 15 * 60 * 1000;
+const CANONICAL_EXTENSION_COMMANDS = new Set(["bmad", "bmad-start", "bmad-help"]);
 
 interface PendingStartRouter {
   cwd: string;
@@ -50,6 +51,30 @@ export interface BmadRuntimeExtensionOptions {
 }
 
 const pendingStartRouters = new Map<string, PendingStartRouter>();
+
+function normalizeRuntimeSource(value: string | undefined): string {
+  return (value ?? "").replaceAll(String.fromCharCode(92), "/").toLowerCase();
+}
+
+function baseCommandName(name: string): string {
+  return name.replace(/:\d+$/, "");
+}
+
+function isBmadRuntimeCommand(command: { name: string; source?: string; sourceInfo?: { path?: string; source?: string } }): boolean {
+  if (command.source !== "extension") return false;
+  if (!CANONICAL_EXTENSION_COMMANDS.has(baseCommandName(command.name))) return false;
+  const sourcePath = normalizeRuntimeSource(command.sourceInfo?.path);
+  const sourceName = normalizeRuntimeSource(command.sourceInfo?.source);
+  return sourcePath.endsWith("/extensions/bmad-runtime/index.ts") || sourceName.includes("pi-bmad-runtime");
+}
+
+function anotherBmadRuntimeAlreadyRegistered(pi: ExtensionAPI): boolean {
+  try {
+    return pi.getCommands().some(isBmadRuntimeCommand);
+  } catch {
+    return false;
+  }
+}
 
 function runtimePackageRoot(): string {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -294,6 +319,8 @@ async function sendWorkflowInvocation(args: string, ctx: any, prompt: string, fr
 }
 
 export default function bmadRuntimeExtension(pi: ExtensionAPI, options: BmadRuntimeExtensionOptions = {}): void {
+  if (anotherBmadRuntimeAlreadyRegistered(pi)) return;
+
   const registryOptions = options.registryOptions ?? {};
 
   const sendConversationalStart = async (ctx: any) => {

@@ -40,7 +40,7 @@ describe("publication status script", () => {
       nextActions: string[];
     };
     expect(output.ok).toBe(true);
-    expect(output.tag).toBe("v0.2.0");
+    expect(output.tag).toBe("v0.2.1");
     expect(output.remoteChecked).toBe(false);
     expect(output.externalWrites).toBe(false);
     expect(output.nextActions.join("\n")).toContain("--check-remote");

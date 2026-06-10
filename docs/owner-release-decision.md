@@ -1,6 +1,6 @@
 # Owner Release Decision
 
-Purpose: give a non-Git-expert Owner one read-only command that summarizes whether `pi-bmad-runtime v0.2.0` is locally ready for a release decision.
+Purpose: give a non-Git-expert Owner one read-only command that summarizes whether `pi-bmad-runtime v0.2.1` is locally ready for a release decision.
 
 Run from the package repository:
 
@@ -32,4 +32,4 @@ Read the JSON fields:
 - `blockedActionsWithoutOwnerApproval` lists actions the runtime must not perform automatically.
 
 If the Owner approves publication, follow `docs/owner-release-runbook-v02.md`.
-After the remote tag exists, run `npm run smoke:git-install` and `npm run audit:objective:remote` to prove the public Git install command and final objective completion.
+After the remote tag exists, run `npm run smoke:git-install`, `npm run smoke:commands -- --git`, and `npm run audit:objective:remote` to prove the public Git install command, canonical slash-command discovery, and final objective completion.

@@ -76,7 +76,7 @@ const internalProductLanguagePatterns = [
 
 try {
   const pkg = JSON.parse(read("package.json"));
-  record("package version is v0.2.0", pkg.version === "0.2.0", `version=${pkg.version}`);
+  record("package version is v0.2.1", pkg.version === "0.2.1", `version=${pkg.version}`);
   record("package name", pkg.name === "pi-bmad-runtime", `name=${pkg.name}`);
 
   for (const required of ["extensions/", "skills/", "prompts/", "docs/", "examples/", "scripts/", "README.md", "AGENTS.md"]) {
@@ -93,6 +93,7 @@ try {
   record("owner release status script registered", pkg.scripts?.["status:owner-release"] === "node scripts/owner-release-decision.mjs", "package.json scripts");
   record("install smoke script registered", pkg.scripts?.["smoke:pi-install"] === "node scripts/pi-install-smoke.mjs", "package.json scripts");
   record("Git install smoke script registered", pkg.scripts?.["smoke:git-install"] === "node scripts/git-install-smoke.mjs", "package.json scripts");
+  record("command discovery smoke script registered", pkg.scripts?.["smoke:commands"] === "node scripts/command-discovery-smoke.mjs", "package.json scripts");
 
   for (const file of [
     "README.md",
@@ -106,6 +107,7 @@ try {
     "docs/install-smoke.md",
     "scripts/pi-install-smoke.mjs",
     "scripts/git-install-smoke.mjs",
+    "scripts/command-discovery-smoke.mjs",
     "scripts/context-budget-audit.mjs",
     "scripts/owner-release-decision.mjs",
     "scripts/release-scope.mjs",
@@ -121,9 +123,9 @@ try {
   }
 
   requireText("README.md", [
-    "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0",
+    "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1",
     "pi install -l ../pi-bmad-runtime",
-    "pi install -l npm:pi-bmad-runtime@0.2.0",
+    "pi install -l npm:pi-bmad-runtime@0.2.1",
     "/bmad-start",
     "/bmad start",
     "Use `/bmad init` only as an explicit repair/reconcile command",
@@ -143,16 +145,17 @@ try {
     "npm run status:owner-release",
     "npm run smoke:pi-install",
     "npm run smoke:git-install",
-    "git tag v0.2.0",
-    "git push origin v0.2.0",
-    "git ls-remote --tags origin refs/tags/v0.2.0",
+    "npm run smoke:commands",
+    "git tag v0.2.1",
+    "git push origin v0.2.1",
+    "git ls-remote --tags origin refs/tags/v0.2.1",
     "npm run status:publication -- --check-remote",
     "npm run audit:objective:remote",
     "Do not publish to npm unless that is separately approved.",
   ]);
 
   requireText("docs/owner-release-runbook-v02.md", [
-    "Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.0` to GitHub.",
+    "Use this runbook only after the Owner explicitly decides to publish `pi-bmad-runtime v0.2.1` to GitHub.",
     "npm run audit:objective",
     "npm run audit:context",
     "npm run audit:release",
@@ -162,13 +165,14 @@ try {
     "npm run status:publication -- --check-remote",
     "npm run status:owner-release -- --check-remote",
     "npm run smoke:git-install",
+    "npm run smoke:commands",
     "npm run audit:objective:remote",
     "git add <reviewed files>",
     "Do not use `git add .`.",
-    "git tag v0.2.0",
-    "git push origin v0.2.0",
-    "git ls-remote --tags origin refs/tags/v0.2.0",
-    "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0",
+    "git tag v0.2.1",
+    "git push origin v0.2.1",
+    "git ls-remote --tags origin refs/tags/v0.2.1",
+    "pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1",
     "Do not publish to npm unless that is separately approved.",
   ]);
 
@@ -200,6 +204,8 @@ try {
   requireText("docs/install-smoke.md", [
     "npm run smoke:pi-install",
     "npm run smoke:git-install",
+    "npm run smoke:commands",
+    "bmad-command-discovery-failed",
     "reason: remote-tag-missing",
   ]);
 

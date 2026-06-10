@@ -14,7 +14,7 @@ Run these commands from the repository/project where the teammate wants to use B
 
 ```bash
 cd <project-repo>
-pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:github.com/DanielCarva1/pi-bmad-runtime@v0.2.1
 pi
 ```
 
@@ -22,7 +22,7 @@ If the machine uses SSH GitHub authentication instead of HTTPS:
 
 ```bash
 cd <project-repo>
-pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.0
+pi install -l git:git@github.com:DanielCarva1/pi-bmad-runtime@v0.2.1
 pi
 ```
 
@@ -34,6 +34,8 @@ Inside the Pi session:
 /bmad-start
 /bmad-help
 ```
+
+If `/bmad-start` is treated as chat text instead of a command, leave Pi and run `pi list` from the same project folder. Remove duplicate `pi-bmad-runtime` entries so the runtime is loaded only once, then restart Pi.
 
 ## Daily commands
 

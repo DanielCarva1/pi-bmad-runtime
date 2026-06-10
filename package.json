@@ -1,6 +1,6 @@
 {
   "name": "pi-bmad-runtime",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "BMAD Runtime for Pi: stateful orchestration, gates, and workflow control for BMAD Method inside pi.",
   "type": "module",
   "license": "MIT",
@@ -42,6 +42,7 @@
     "pack:dry-run": "npm pack --dry-run",
     "smoke:pi-install": "node scripts/pi-install-smoke.mjs",
     "smoke:git-install": "node scripts/git-install-smoke.mjs",
+    "smoke:commands": "node scripts/command-discovery-smoke.mjs",
     "smoke": "npm test && npm run pack:dry-run"
   },
   "peerDependencies": {

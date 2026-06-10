@@ -99,7 +99,7 @@ describe("runtime projects report", () => {
         projectId: "builder-id",
         displayName: "Pi BMAD Builder",
         historicalAliases: ["pi-bmad-builder"],
-        activeVersion: "v0.2.0",
+        activeVersion: "v0.2.1",
         gitEvidence: {
           worktreePath: root,
           branch: "main",
